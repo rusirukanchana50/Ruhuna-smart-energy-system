@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>Electrical Alerts | Faculty of Engineering Energy Portal</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <a href="{{ url_for('dashboard') }}" class="nav-brand">
+      <svg class="nav-brand-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="13 2 4 14 11 14 11 22 20 10 13 10 13 2" fill="url(#boltNavGrad)" stroke="#38bdf8" stroke-width="1.5" />
+        <defs>
+          <linearGradient id="boltNavGrad" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#38bdf8" />
+            <stop offset="1" stop-color="#f59e0b" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div>
+        <span class="nav-brand-title">Ruhuna Smart Energy</span>
+        <span class="nav-brand-sub">Faculty of Engineering &bull; University of Ruhuna</span>
+      </div>
+    </a>
+
+    <!-- Top Navigation Tabs -->
+    <nav class="nav-links">
+      <a href="{{ url_for('dashboard') }}" class="nav-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+        Live Monitor
+      </a>
+      <a href="{{ url_for('analytics_page') }}" class="nav-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        Historical Analytics
+      </a>
+      <a href="{{ url_for('alerts_page') }}" class="nav-link active">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        Electrical Alerts
+        <span id="navAlertBadge" class="nav-alert-counter" style="display: none;">0</span>
+      </a>
+      <a href="{{ url_for('cost_efficiency_page') }}" class="nav-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23"></line>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+        Cost &amp; Efficiency
+      </a>
+      <a href="{{ url_for('reports_page') }}" class="nav-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+        Reports
+      </a>
+    </nav>
+
+    <div class="nav-actions">
+      <!-- User Profile Badge -->
+      <div class="user-profile-badge">
+        <div class="user-avatar" title="{{ session.get('full_name') }}">
+          {{ session.get('full_name', 'U')[0] | upper }}
+        </div>
+        <div class="user-info">
+          <span class="user-name">{{ session.get('full_name', 'User') }}</span>
+          <span id="userRoleBadge" class="user-role-tag {{ 'role-admin' if session.get('role') == 'Administrator' else 'role-viewer' }}" data-role="{{ session.get('role', 'Viewer') }}">
+            {{ session.get('role', 'Viewer') }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Working Logout Form -->
+      <form action="{{ url_for('logout') }}" method="POST" style="margin: 0; display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-logout" title="Sign out of the system">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          Logout
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <!-- Main Alerts Container -->
+  <main class="dashboard-main">
+
+    <!-- Top Scope Banner -->
+    <section class="welcome-banner" style="margin-bottom: 1.5rem;">
+      <div class="welcome-header">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem; flex-wrap: wrap;">
+            <h1 class="welcome-title" style="margin-bottom: 0;">Electrical Alerts &amp; Abnormal Condition Detection</h1>
+            <span class="badge-simulated">⚡ SIMULATED TELEMETRY</span>
+          </div>
+          <p class="welcome-desc">
+            Autonomous power-engineering condition monitoring for CEB power quality (PF &lt; 0.85), distribution voltage limits (&plusmn;5%), grid frequency deviations (&plusmn;1%), feeder overload limits, and sensor offline states.
+          </p>
+        </div>
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem;">
+          <div class="status-pill">
+            <span class="pulse-dot"></span>
+            <span>Alert Engine Active</span>
+          </div>
+          <span id="alertLastUpdated" style="font-size: 0.75rem; color: var(--text-dim);">Monitoring active</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Alert KPI Summary Cards -->
+    <section class="kpi-grid" style="margin-bottom: 1.5rem;">
+      
+      <!-- Active Critical Alerts -->
+      <div class="kpi-card" style="--card-accent: #f43f5e;">
+        <div class="kpi-header">
+          <span class="kpi-title">Active Critical Alerts</span>
+          <div class="kpi-icon" style="background: rgba(244, 63, 94, 0.15); color: #f43f5e;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+          </div>
+        </div>
+        <div class="kpi-value-wrap">
+          <span id="kpiActiveCritical" class="kpi-value" style="color: #f43f5e;">0</span>
+          <span class="kpi-unit">alarms</span>
+        </div>
+        <div class="kpi-subtext">Overload, severe undervoltage / overvoltage</div>
+      </div>
+
+      <!-- Active Warnings -->
+      <div class="kpi-card" style="--card-accent: #f59e0b;">
+        <div class="kpi-header">
+          <span class="kpi-title">Active Warnings</span>
+          <div class="kpi-icon icon-gold">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="8" x2="12" y2="12"></line>
+              <line x1="12" y1="16" x2="12.01" y2="16"></line>
+            </svg>
+          </div>
+        </div>
+        <div class="kpi-value-wrap">
+          <span id="kpiActiveWarnings" class="kpi-value" style="color: #f59e0b;">0</span>
+          <span class="kpi-unit">warnings</span>
+        </div>
+        <div class="kpi-subtext">Low PF &lt; 0.85, high load &gt; 90%, frequency, sensor offline</div>
+      </div>
+
+      <!-- Total Active Anomalies -->
+      <div class="kpi-card" style="--card-accent: var(--energy-cyan);">
+        <div class="kpi-header">
+          <span class="kpi-title">Total Active Abnormal</span>
+          <div class="kpi-icon icon-blue">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <activity width="18" height="18"></activity>
+              <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+            </svg>
+          </div>
+        </div>
+        <div class="kpi-value-wrap">
+          <span id="kpiTotalActive" class="kpi-value">0</span>
+          <span class="kpi-unit">conditions</span>
+        </div>
+        <div class="kpi-subtext">Currently active non-normal states</div>
+      </div>
+
+      <!-- Cleared / Resolved -->
+      <div class="kpi-card" style="--card-accent: var(--success);">
+        <div class="kpi-header">
+          <span class="kpi-title">Cleared Conditions</span>
+          <div class="kpi-icon icon-green">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+              <polyline points="22 4 12 14.01 9 11.01"></polyline>
+            </svg>
+          </div>
+        </div>
+        <div class="kpi-value-wrap">
+          <span id="kpiClearedTotal" class="kpi-value">0</span>
+          <span class="kpi-unit">resolved</span>
+        </div>
+        <div class="kpi-subtext">Conditions returned to normal operational bounds</div>
+      </div>
+
+    </section>
+
+    <!-- Query & Filter Controls -->
+    <section class="filter-card">
+      <div class="filter-header">
+        <span style="font-size: 0.95rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--energy-cyan);">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+          </svg>
+          Filter Alerts &amp; Historical Anomalies
+        </span>
+        <div style="display: flex; align-items: center; gap: 0.5rem;">
+          <button type="button" id="btnRefreshAlerts" class="preset-btn active" title="Refresh alerts list">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align: middle;">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+            </svg>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+      <form id="alertsFilterForm" class="filter-controls-grid" onsubmit="event.preventDefault(); loadAlerts();">
+        
+        <!-- Facility / Building Filter -->
+        <div class="filter-group">
+          <label class="filter-label" for="filterBuilding">Facility</label>
+          <select id="filterBuilding" class="filter-select">
+            <option value="all">All Faculty Buildings</option>
+            {% for b in buildings %}
+            <option value="{{ b.id }}">[{{ b.code }}] {{ b.name }} ({{ b.rated_power_kw }} kW)</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Severity Filter -->
+        <div class="filter-group">
+          <label class="filter-label" for="filterSeverity">Severity</label>
+          <select id="filterSeverity" class="filter-select">
+            <option value="all">All Severities</option>
+            <option value="CRITICAL">CRITICAL</option>
+            <option value="WARNING">WARNING</option>
+            <option value="INFO">INFO</option>
+          </select>
+        </div>
+
+        <!-- Status Filter: Active vs Cleared -->
+        <div class="filter-group">
+          <label class="filter-label" for="filterStatus">Condition Status</label>
+          <select id="filterStatus" class="filter-select">
+            <option value="all">All (Active &amp; Cleared)</option>
+            <option value="active" selected>Active Anomalies Only</option>
+            <option value="cleared">Cleared / Resolved Only</option>
+          </select>
+        </div>
+
+        <!-- Start Date & Time -->
+        <div class="filter-group">
+          <label class="filter-label" for="filterStart">Start Date &amp; Time</label>
+          <input type="datetime-local" id="filterStart" class="filter-input">
+        </div>
+
+        <!-- End Date & Time -->
+        <div class="filter-group">
+          <label class="filter-label" for="filterEnd">End Date &amp; Time</label>
+          <input type="datetime-local" id="filterEnd" class="filter-input">
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 0.5rem; align-items: flex-end;">
+          <button type="submit" id="btnFilterApply" class="btn btn-primary" style="height: 42px; padding: 0 1.25rem;">
+            Filter
+          </button>
+          <button type="button" id="btnFilterReset" class="btn btn-secondary" style="height: 42px; padding: 0 1rem;">
+            Reset
+          </button>
+        </div>
+
+      </form>
+    </section>
+
+    <!-- Feedback Notice / Alert Message -->
+    <div id="alertsFeedbackAlert" class="alert" style="display: none; margin-bottom: 1.5rem;"></div>
+
+    <!-- Alerts Data Table Card -->
+    <section class="params-table-card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.5rem;">
+        <div>
+          <h2 style="font-size: 1.1rem; font-weight: 600; color: #fff; margin-bottom: 0.2rem;">
+            Electrical Event Log &amp; Safety Threshold Violations
+          </h2>
+          <span style="font-size: 0.8rem; color: var(--text-dim);">
+            State-machine tracked: alerts clear automatically when operational telemetry returns to normal bounds.
+          </span>
+        </div>
+        <div style="font-size: 0.85rem; color: var(--energy-cyan); font-family: var(--font-mono);">
+          <span id="alertsRowCount">0</span> alerts matched
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th style="min-width: 140px;">Timestamp</th>
+              <th style="min-width: 110px;">Facility</th>
+              <th style="min-width: 150px;">Abnormal Condition</th>
+              <th style="min-width: 90px;">Severity</th>
+              <th style="min-width: 120px;">Observed / Threshold</th>
+              <th>Diagnostic Message</th>
+              <th style="min-width: 100px;">Condition</th>
+              <th style="min-width: 160px; text-align: center;">Acknowledgment</th>
+            </tr>
+          </thead>
+          <tbody id="alertsTableBody">
+            <!-- Dynamically populated via static/js/alerts.js -->
+            <tr>
+              <td colspan="8" style="text-align: center; color: var(--text-dim); padding: 2rem;">
+                Loading electrical telemetry alerts...
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Client-side Alerts Controller -->
+  <script src="{{ url_for('static', filename='js/alerts.js') }}"></script>
+</body>
+</html>

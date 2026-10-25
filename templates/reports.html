@@ -1,0 +1,474 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>Energy Audit Reports &amp; Export | University of Ruhuna</title>
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <!-- Chart.js for data visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body class="dashboard-body">
+
+  <!-- Top Navigation Header -->
+  <header class="navbar">
+    <a href="{{ url_for('dashboard') }}" class="brand-link">
+      <div class="brand-crest">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"></circle>
+          <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
+          <path d="M2 12h20"></path>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-title">Faculty of Engineering</span>
+        <span class="brand-sub">University of Ruhuna &bull; Smart Energy System</span>
+      </div>
+    </a>
+
+    <!-- Top Navigation Tabs (Standardized 6 Views) -->
+    <nav class="nav-links">
+      <a href="{{ url_for('dashboard') }}" class="nav-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+        Live Monitor
+      </a>
+      <a href="{{ url_for('analytics_page') }}" class="nav-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        Historical Analytics
+      </a>
+      <a href="{{ url_for('alerts_page') }}" class="nav-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        Electrical Alerts
+      </a>
+      <a href="{{ url_for('cost_efficiency_page') }}" class="nav-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23"></line>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+        Cost &amp; Efficiency
+      </a>
+      <a href="{{ url_for('reports_page') }}" class="nav-link active">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+        Reports
+      </a>
+    </nav>
+
+    <div class="nav-actions">
+      <!-- User Profile Badge -->
+      <div class="user-profile-badge">
+        <div class="user-avatar" title="{{ session.get('full_name') }}">
+          {{ session.get('full_name', 'U')[0] | upper }}
+        </div>
+        <div class="user-info">
+          <span class="user-name">{{ session.get('full_name', 'User') }}</span>
+          <span class="user-role-tag {{ 'role-admin' if session.get('role') == 'Administrator' else 'role-viewer' }}" id="userRoleBadge">
+            {{ session.get('role', 'Viewer') }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Logout Form Button -->
+      <form action="{{ url_for('logout') }}" method="POST" style="margin: 0;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn-logout" title="Sign out of the system">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          Sign Out
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <!-- Main Content Container -->
+  <main class="dashboard-container">
+
+    <!-- Hero / Title Section -->
+    <section class="dashboard-hero" style="margin-bottom: 1.5rem;">
+      <div class="hero-content">
+        <div class="hero-badge">
+          <span class="pulse-dot"></span>
+          PHASE 8 &bull; AUDIT REPORTING &amp; DATA EXPORT
+        </div>
+        <h1 class="hero-title">Energy Audit Reports &amp; Data Export</h1>
+        <p class="hero-subtitle">
+          Comprehensive 16-parameter electrical energy reports, browser printable PDF generation, and CSV telemetry exports directly from SQLite records.
+        </p>
+      </div>
+
+      <!-- Prominent Simulation Badge & Disclaimer -->
+      <div class="cost-disclaimer-box" style="margin-top: 1rem;">
+        <div class="disclaimer-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="8" x2="12" y2="12"></line>
+            <line x1="12" y1="16" x2="12.01" y2="16"></line>
+          </svg>
+        </div>
+        <div class="disclaimer-text">
+          <strong>Academic Prototype Notice:</strong>
+          <span>Measurements used in this prototype are generated from realistic mathematical three-phase simulations. Cost calculations utilize a demonstration institutional tariff model (Energy: LKR {{ "%.2f"|format(tariff.energy_rate_lkr_per_kwh) }}/kWh, Demand: LKR {{ "%.2f"|format(tariff.demand_rate_lkr_per_kw) }}/kW) and are not an official CEB bill.</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Query Parameters & Export Actions Panel -->
+    <section class="analytics-filter-card" style="margin-bottom: 2rem;">
+      <div class="filter-header-row">
+        <div class="filter-title-group">
+          <h2 class="filter-heading">Report Configuration</h2>
+          <span class="filter-sub">Select facility, date range, or quick evaluation presets</span>
+        </div>
+        <!-- Preset Period Buttons (Today, Last 24 Hours, Last 7 Days, This Month) -->
+        <div class="preset-buttons" id="reportPresets">
+          <button type="button" class="preset-btn" data-preset="today">Today</button>
+          <button type="button" class="preset-btn active" data-preset="24h">Last 24 Hours</button>
+          <button type="button" class="preset-btn" data-preset="7d">Last 7 Days</button>
+          <button type="button" class="preset-btn" data-preset="month">This Month</button>
+        </div>
+      </div>
+
+      <!-- Controls Form -->
+      <form id="reportFilterForm" class="filter-controls-grid" onsubmit="event.preventDefault(); triggerGenerateReport();">
+        <!-- Building Selection -->
+        <div class="filter-group">
+          <label class="filter-label" for="reportBuilding">Facility / Scope</label>
+          <select id="reportBuilding" class="filter-select">
+            <option value="all">Campus Facilities Summary (All Registered Buildings)</option>
+            {% for b in buildings %}
+            <option value="{{ b.id }}">[{{ b.code }}] {{ b.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Start Date & Time -->
+        <div class="filter-group">
+          <label class="filter-label" for="reportStart">Start Date &amp; Time</label>
+          <input type="datetime-local" id="reportStart" class="filter-input" required>
+        </div>
+
+        <!-- End Date & Time -->
+        <div class="filter-group">
+          <label class="filter-label" for="reportEnd">End Date &amp; Time</label>
+          <input type="datetime-local" id="reportEnd" class="filter-input" required>
+        </div>
+
+        <!-- Action Buttons -->
+        <div style="display: flex; gap: 0.5rem; align-items: flex-end; flex-wrap: wrap;">
+          <!-- Generate Report Button -->
+          <button type="submit" id="btnGenerateReport" class="btn btn-primary" style="height: 42px; padding: 0 1.25rem;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+              <polyline points="17 6 23 6 23 12"></polyline>
+            </svg>
+            Generate
+          </button>
+
+          <!-- Printable PDF Button -->
+          <button type="button" id="btnPrintReport" onclick="openPrintableReport()" class="btn btn-secondary" style="height: 42px; padding: 0 1.15rem; background: rgba(56, 189, 248, 0.15); border-color: rgba(56, 189, 248, 0.4); color: var(--energy-cyan);">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polyline points="6 9 6 2 18 2 18 9"></polyline>
+              <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+              <rect x="6" y="14" width="12" height="8"></rect>
+            </svg>
+            Print / Save PDF
+          </button>
+
+          <!-- CSV Export Button -->
+          <button type="button" id="btnExportCsv" onclick="downloadCsvExport()" class="btn btn-secondary" style="height: 42px; padding: 0 1.15rem; background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.4); color: #10b981;">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+              <polyline points="7 10 12 15 17 10"></polyline>
+              <line x1="12" y1="15" x2="12" y2="3"></line>
+            </svg>
+            Export CSV
+          </button>
+        </div>
+      </form>
+    </section>
+
+    <!-- Error / Status Notice -->
+    <div id="reportAlert" class="alert alert-danger" style="display: none; margin-bottom: 1.5rem;"></div>
+
+    <!-- Loading Skeleton State -->
+    <div id="reportLoadingState" style="display: none; text-align: center; padding: 3rem 1rem;">
+      <div class="pulse-dot" style="width: 16px; height: 16px; margin: 0 auto 1rem auto; background: var(--energy-cyan);"></div>
+      <p style="color: var(--text-muted); font-size: 0.95rem;">Compiling telemetry records and calculating energy audit parameters...</p>
+    </div>
+
+    <!-- Active Report Presentation Container -->
+    <div id="reportContentArea">
+      
+      <!-- Report Header Banner -->
+      <section class="report-meta-header" style="margin-bottom: 1.5rem;">
+        <div class="report-header-text">
+          <span class="report-tag" id="repScopeTag">CAMPUS SUMMARY</span>
+          <h2 class="report-display-title" id="repDisplayTitle">Electrical Energy Audit &amp; Performance Report</h2>
+          <div class="report-meta-pills">
+            <span class="meta-pill">Period: <strong id="repMetaPeriod">Loading...</strong></span>
+            <span class="meta-pill">Duration: <strong id="repMetaDuration">0 days</strong></span>
+            <span class="meta-pill">Generated: <strong id="repMetaGenerated">--</strong></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 16-Parameter Comprehensive KPI Grid -->
+      <section class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); margin-bottom: 2rem;">
+        
+        <!-- Total Energy Consumption (kWh) -->
+        <div class="kpi-card" style="--card-accent: var(--ruhuna-gold);">
+          <div class="kpi-header"><span class="kpi-title">Energy Consumption</span></div>
+          <div class="kpi-value-wrap">
+            <span id="repTotalKwh" class="kpi-value">0.0</span>
+            <span class="kpi-unit">kWh</span>
+          </div>
+          <div class="kpi-subtext">True integrated active energy</div>
+        </div>
+
+        <!-- Estimated Electricity Cost (LKR) -->
+        <div class="kpi-card" style="--card-accent: #10b981;">
+          <div class="kpi-header"><span class="kpi-title">Estimated Cost</span></div>
+          <div class="kpi-value-wrap">
+            <span id="repTotalCost" class="kpi-value">0.00</span>
+            <span class="kpi-unit">LKR</span>
+          </div>
+          <div class="kpi-subtext" id="repCostSubtext">Demonstration tariff model</div>
+        </div>
+
+        <!-- Average Active Power (kW) -->
+        <div class="kpi-card" style="--card-accent: var(--energy-cyan);">
+          <div class="kpi-header"><span class="kpi-title">Average Active Power</span></div>
+          <div class="kpi-value-wrap">
+            <span id="repAvgPower" class="kpi-value">0.0</span>
+            <span class="kpi-unit">kW</span>
+          </div>
+          <div class="kpi-subtext">Mean active demand</div>
+        </div>
+
+        <!-- Peak Demand (kW) -->
+        <div class="kpi-card" style="--card-accent: #f43f5e;">
+          <div class="kpi-header"><span class="kpi-title">Peak Demand</span></div>
+          <div class="kpi-value-wrap">
+            <span id="repPeakDemand" class="kpi-value">0.0</span>
+            <span class="kpi-unit">kW</span>
+          </div>
+          <div class="kpi-subtext">Maximum power recorded</div>
+        </div>
+
+        <!-- Load Factor -->
+        <div class="kpi-card" style="--card-accent: #a855f7;">
+          <div class="kpi-header"><span class="kpi-title">Load Factor</span></div>
+          <div class="kpi-value-wrap">
+            <span id="repLoadFactor" class="kpi-value">0.00</span>
+            <span class="kpi-unit" id="repLoadFactorPct">(0.0%)</span>
+          </div>
+          <div class="kpi-subtext">Avg Demand &divide; Peak Demand</div>
+        </div>
+
+        <!-- Average Power Factor -->
+        <div class="kpi-card" style="--card-accent: var(--energy-teal);">
+          <div class="kpi-header"><span class="kpi-title">Average Power Factor</span></div>
+          <div class="kpi-value-wrap">
+            <span id="repAvgPf" class="kpi-value">0.000</span>
+          </div>
+          <div class="kpi-subtext" id="repPfComplianceSub">CEB statutory min: 0.85</div>
+        </div>
+
+        <!-- Min Power Factor -->
+        <div class="kpi-card" style="--card-accent: #e11d48;">
+          <div class="kpi-header"><span class="kpi-title">Minimum Power Factor</span></div>
+          <div class="kpi-value-wrap">
+            <span id="repMinPf" class="kpi-value">0.000</span>
+          </div>
+          <div class="kpi-subtext">Lowest recorded PF dip</div>
+        </div>
+
+        <!-- Average Apparent Power (kVA) -->
+        <div class="kpi-card" style="--card-accent: #6366f1;">
+          <div class="kpi-header"><span class="kpi-title">Apparent Power (S)</span></div>
+          <div class="kpi-value-wrap">
+            <span id="repAvgS" class="kpi-value">0.0</span>
+            <span class="kpi-unit">kVA</span>
+          </div>
+          <div class="kpi-subtext">Mean total electrical load</div>
+        </div>
+
+        <!-- Average Reactive Power (kVAr) -->
+        <div class="kpi-card" style="--card-accent: #eab308;">
+          <div class="kpi-header"><span class="kpi-title">Reactive Power (Q)</span></div>
+          <div class="kpi-value-wrap">
+            <span id="repAvgQ" class="kpi-value">0.0</span>
+            <span class="kpi-unit">kVAr</span>
+          </div>
+          <div class="kpi-subtext">Inductive reactive draw</div>
+        </div>
+
+        <!-- After-Hours Energy (kWh) -->
+        <div class="kpi-card" style="--card-accent: #fb923c;">
+          <div class="kpi-header"><span class="kpi-title">After-Hours Energy</span></div>
+          <div class="kpi-value-wrap">
+            <span id="repAfterHours" class="kpi-value">0.0</span>
+            <span class="kpi-unit">kWh</span>
+          </div>
+          <div class="kpi-subtext" id="repAfterHoursPct">(0.0% of total)</div>
+        </div>
+
+        <!-- Voltage Limits (V) -->
+        <div class="kpi-card" style="--card-accent: #38bdf8;">
+          <div class="kpi-header"><span class="kpi-title">Voltage Window</span></div>
+          <div class="kpi-value-wrap">
+            <span id="repVoltRange" class="kpi-value" style="font-size: 1.15rem;">--</span>
+          </div>
+          <div class="kpi-subtext" id="repAvgVolt">Avg: 400.0 V (Nominal)</div>
+        </div>
+
+        <!-- Average Frequency (Hz) -->
+        <div class="kpi-card" style="--card-accent: #06b6d4;">
+          <div class="kpi-header"><span class="kpi-title">Grid Frequency</span></div>
+          <div class="kpi-value-wrap">
+            <span id="repAvgFreq" class="kpi-value">50.00</span>
+            <span class="kpi-unit">Hz</span>
+          </div>
+          <div class="kpi-subtext">Nominal grid reference: 50 Hz</div>
+        </div>
+
+        <!-- Warning Alerts Count -->
+        <div class="kpi-card" style="--card-accent: #f59e0b;">
+          <div class="kpi-header"><span class="kpi-title">Warning Alerts</span></div>
+          <div class="kpi-value-wrap">
+            <span id="repWarnAlerts" class="kpi-value">0</span>
+          </div>
+          <div class="kpi-subtext">Low PF / High load / Freq excursions</div>
+        </div>
+
+        <!-- Critical Alerts Count -->
+        <div class="kpi-card" style="--card-accent: #ef4444;">
+          <div class="kpi-header"><span class="kpi-title">Critical Alerts</span></div>
+          <div class="kpi-value-wrap">
+            <span id="repCritAlerts" class="kpi-value">0</span>
+          </div>
+          <div class="kpi-subtext">Voltage limits / Overload excursions</div>
+        </div>
+
+      </section>
+
+      <!-- Engineering Observations Card -->
+      <section class="engineering-observations-card" style="margin-bottom: 2rem;">
+        <div class="obs-header">
+          <div class="obs-title-group">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <h3 class="obs-heading">Electrical Engineering Observations</h3>
+          </div>
+          <span class="obs-badge status-optimal" id="repStatusBadge">OPTIMAL</span>
+        </div>
+        <div class="obs-body" id="repObservationsList">
+          <!-- Dynamically populated evidence-based findings -->
+        </div>
+      </section>
+
+      <!-- Multi-Building Breakdown Table (Shown on Campus Summary mode) -->
+      <section class="params-table-card" id="campusBreakdownSection" style="margin-bottom: 2.5rem;">
+        <h3 style="font-size: 1.05rem; font-weight: 600; color: #fff; margin-bottom: 1.25rem;">
+          Faculty Complexes Energy &amp; Demand Breakdown
+        </h3>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Building Name</th>
+                <th>Energy (kWh)</th>
+                <th>Est. Cost (LKR)</th>
+                <th>Peak Demand (kW)</th>
+                <th>Load Factor</th>
+                <th>Avg PF</th>
+                <th>After-Hours (kWh)</th>
+              </tr>
+            </thead>
+            <tbody id="campusBreakdownTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <!-- Administrator Tariff & System Configuration Card (Enforces Req 12) -->
+      {% if session.get('role') == 'Administrator' %}
+      <section class="params-table-card" style="margin-bottom: 2rem; border-color: rgba(245, 158, 11, 0.3);">
+        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 1.25rem;">
+          <div>
+            <h3 style="font-size: 1.05rem; font-weight: 600; color: #fbbf24; margin-bottom: 0.25rem;">
+              Demonstration Tariff Configuration (Administrator Only)
+            </h3>
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin: 0;">
+              Configure institutional tariff rates in SQLite. Changes apply immediately to all cost evaluations.
+            </p>
+          </div>
+          <span class="user-role-tag role-admin">Administrator</span>
+        </div>
+
+        <form id="tariffConfigForm" onsubmit="event.preventDefault(); updateTariffConfig();" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem; align-items: flex-end;">
+          <input type="hidden" id="cfgTariffId" value="{{ tariff.id }}">
+          
+          <div class="filter-group">
+            <label class="filter-label" for="cfgTariffName">Tariff Description</label>
+            <input type="text" id="cfgTariffName" class="filter-input" value="{{ tariff.name }}" required>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label" for="cfgEnergyRate">Energy Rate (LKR / kWh)</label>
+            <input type="number" step="0.01" id="cfgEnergyRate" class="filter-input" value="{{ tariff.energy_rate_lkr_per_kwh }}" required>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label" for="cfgDemandRate">Demand Rate (LKR / kW)</label>
+            <input type="number" step="0.01" id="cfgDemandRate" class="filter-input" value="{{ tariff.demand_rate_lkr_per_kw }}" required>
+          </div>
+
+          <div class="filter-group">
+            <label class="filter-label" for="cfgFixedCharge">Monthly Fixed Charge (LKR)</label>
+            <input type="number" step="0.01" id="cfgFixedCharge" class="filter-input" value="{{ tariff.fixed_charge_lkr }}" required>
+          </div>
+
+          <div>
+            <button type="submit" id="btnSaveTariff" class="btn btn-primary" style="height: 42px; width: 100%;">
+              Save Tariff Rates
+            </button>
+          </div>
+        </form>
+        <div id="tariffConfigAlert" class="alert" style="display: none; margin-top: 1rem;"></div>
+      </section>
+      {% endif %}
+
+    </div>
+
+  </main>
+
+  <!-- Client-Side Controller -->
+  <script src="{{ url_for('static', filename='js/reports.js') }}"></script>
+</body>
+</html>

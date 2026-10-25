@@ -1,0 +1,57 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environment variables & secrets
+.env
+.env.*
+!.env.example
+*.secret
+.secret_key
+*.key
+
+# SQLite Databases & Backups (Preserves local telemetry records and secrets from public exposure)
+energy.db
+*.db
+*.db-wal
+*.db-shm
+*.sqlite3
+*.sqlite
+*.backup
+*.backup*
+*.task4_backup
+*.final_demo_backup
+*.bak
+backups/
+
+# Runtime and Application Data
+instance/
+*.log
+
+# Virtual Environments
+venv/
+env/
+ENV/
+.venv/
+env.bak/
+venv.bak/
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*~
+*.sublime-project
+*.sublime-workspace
+
+# Operating System files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Test reports & temp coverage
+.pytest_cache/
+.coverage
+htmlcov/
+

@@ -1,0 +1,7 @@
+# University of Ruhuna - Faculty of Engineering
+# Smart Energy Monitoring and Analytics System
+# Python Dependencies for Production and Demonstration
+
+Flask>=3.0.0
+flask-cors>=5.0.0
+Werkzeug>=3.0.0

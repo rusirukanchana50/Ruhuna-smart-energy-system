@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{{ report.report_title }} | University of Ruhuna</title>
+  <!-- Main Stylesheet -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <!-- Chart.js for summary visual in printable view -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+
+  <style>
+    /* Print Specific Styles */
+    @media print {
+      body {
+        background: #ffffff !important;
+        color: #0f172a !important;
+        font-size: 11pt;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .printable-page {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100% !important;
+        box-shadow: none !important;
+        border: none !important;
+        background: transparent !important;
+      }
+      .print-card {
+        background: #ffffff !important;
+        border: 1px solid #cbd5e1 !important;
+        color: #0f172a !important;
+        break-inside: avoid;
+        page-break-inside: avoid;
+      }
+      .print-table th {
+        background: #f1f5f9 !important;
+        color: #0f172a !important;
+        border: 1px solid #cbd5e1 !important;
+      }
+      .print-table td {
+        border: 1px solid #e2e8f0 !important;
+        color: #1e293b !important;
+      }
+      .print-header-border {
+        border-bottom: 2px solid #0f172a !important;
+      }
+      .text-dark {
+        color: #0f172a !important;
+      }
+      .text-muted-print {
+        color: #64748b !important;
+      }
+      .print-kpi-box {
+        border: 1px solid #cbd5e1 !important;
+        background: #f8fafc !important;
+      }
+    }
+
+    /* Screen Preview Styles */
+    .printable-container {
+      max-width: 960px;
+      margin: 2rem auto;
+      padding: 2.5rem 3rem;
+      background: #ffffff;
+      color: #0f172a;
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+      font-family: 'Outfit', -apple-system, sans-serif;
+    }
+
+    .print-brand-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 2px solid #0f172a;
+      padding-bottom: 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .print-logo-group {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    .print-logo-circle {
+      width: 54px;
+      height: 54px;
+      border-radius: 50%;
+      background: #0f172a;
+      color: #f59e0b;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 700;
+      font-size: 1.3rem;
+    }
+
+    .print-brand-titles h1 {
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #0f172a;
+      margin: 0;
+      line-height: 1.2;
+    }
+
+    .print-brand-titles h2 {
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: #2563eb;
+      margin: 0.15rem 0 0 0;
+    }
+
+    .print-brand-titles p {
+      font-size: 0.85rem;
+      color: #64748b;
+      margin: 0.1rem 0 0 0;
+    }
+
+    .print-meta-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.75rem 2rem;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.75rem;
+      font-size: 0.9rem;
+    }
+
+    .print-meta-item strong {
+      color: #334155;
+      display: inline-block;
+      width: 140px;
+    }
+
+    .print-section-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: #0f172a;
+      border-bottom: 1px solid #e2e8f0;
+      padding-bottom: 0.4rem;
+      margin: 1.5rem 0 1rem 0;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .print-kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 0.75rem;
+      margin-bottom: 1.75rem;
+    }
+
+    .print-kpi-cell {
+      border: 1px solid #e2e8f0;
+      background: #f8fafc;
+      border-radius: 6px;
+      padding: 0.75rem 1rem;
+    }
+
+    .print-kpi-lbl {
+      font-size: 0.75rem;
+      color: #64748b;
+      text-transform: uppercase;
+      font-weight: 600;
+      margin-bottom: 0.2rem;
+    }
+
+    .print-kpi-val {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #0f172a;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    .print-kpi-unit {
+      font-size: 0.75rem;
+      color: #64748b;
+      margin-left: 0.2rem;
+    }
+
+    .print-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .print-table th, .print-table td {
+      border: 1px solid #cbd5e1;
+      padding: 0.55rem 0.75rem;
+      text-align: left;
+    }
+
+    .print-table th {
+      background: #f1f5f9;
+      font-weight: 600;
+      color: #1e293b;
+    }
+
+    .print-obs-box {
+      background: #f8fafc;
+      border-left: 4px solid #2563eb;
+      border: 1px solid #e2e8f0;
+      border-left-width: 4px;
+      border-left-color: #2563eb;
+      border-radius: 4px;
+      padding: 1rem 1.25rem;
+      margin-bottom: 1.5rem;
+    }
+
+    .print-obs-box ul {
+      margin: 0;
+      padding-left: 1.25rem;
+      font-size: 0.88rem;
+      color: #334155;
+      line-height: 1.5;
+    }
+
+    .print-disclaimer {
+      border-top: 1px solid #e2e8f0;
+      padding-top: 1rem;
+      font-size: 0.78rem;
+      color: #64748b;
+      line-height: 1.4;
+      margin-top: 2rem;
+      text-align: center;
+    }
+
+    .print-floating-bar {
+      position: fixed;
+      bottom: 1.5rem;
+      right: 1.5rem;
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(255, 255, 255, 0.15);
+      border-radius: 8px;
+      padding: 0.75rem 1.25rem;
+      display: flex;
+      gap: 0.75rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
+      backdrop-filter: blur(12px);
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body style="background: #0b1121; padding: 1rem 0;">
+
+  <!-- Floating Print Controls (Hidden during print) -->
+  <div class="print-floating-bar no-print">
+    <button onclick="window.print()" class="btn btn-primary" style="height: 38px;">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="6 9 6 2 18 2 18 9"></polyline>
+        <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
+        <rect x="6" y="14" width="12" height="8"></rect>
+      </svg>
+      Print / Save as PDF
+    </button>
+    <button onclick="window.close()" class="btn btn-secondary" style="height: 38px;">
+      Close Window
+    </button>
+  </div>
+
+  <!-- Printable Document Body -->
+  <div class="printable-container printable-page">
+    
+    <!-- Formal University & Faculty Header -->
+    <header class="print-brand-row">
+      <div class="print-logo-group">
+        <div class="print-logo-circle">UoR</div>
+        <div class="print-brand-titles">
+          <h1>UNIVERSITY OF RUHUNA</h1>
+          <h2>Faculty of Engineering</h2>
+          <p>Smart Energy Monitoring &amp; Analytics System &bull; Hapugala, Galle, Sri Lanka</p>
+        </div>
+      </div>
+      <div style="text-align: right;">
+        <span style="display: inline-block; padding: 0.25rem 0.6rem; background: #e2e8f0; color: #0f172a; font-size: 0.75rem; font-weight: 700; border-radius: 4px;">
+          FORMAL AUDIT REPORT
+        </span>
+      </div>
+    </header>
+
+    <!-- Report Title -->
+    <h2 style="font-size: 1.25rem; font-weight: 700; color: #0f172a; margin-bottom: 1rem;">
+      {{ report.report_title }}
+    </h2>
+
+    <!-- Metadata Grid (Building, Period, Generated date/time) -->
+    <div class="print-meta-grid">
+      <div class="print-meta-item">
+        <strong>Facility / Scope:</strong>
+        <span>{{ report.building_name }} ({{ report.building_code }})</span>
+      </div>
+      <div class="print-meta-item">
+        <strong>Generated Date:</strong>
+        <span>{{ report.generated_at }}</span>
+      </div>
+      <div class="print-meta-item">
+        <strong>Reporting Period:</strong>
+        <span>{{ report.reporting_period.start }} to {{ report.reporting_period.end }}</span>
+      </div>
+      <div class="print-meta-item">
+        <strong>Period Duration:</strong>
+        <span>{{ report.reporting_period.duration_days }} Day(s)</span>
+      </div>
+    </div>
+
+    <!-- Section 1: Summary KPI Table -->
+    <div class="print-section-title">1. Electrical &amp; Financial Summary Indicators</div>
+    
+    <div class="print-kpi-grid">
+      <div class="print-kpi-cell">
+        <div class="print-kpi-lbl">Energy Consumed</div>
+        <div class="print-kpi-val">{% if report.metrics.total_energy_kwh is not none %}{{ "%.2f"|format(report.metrics.total_energy_kwh) }}<span class="print-kpi-unit">kWh</span>{% else %}--{% endif %}</div>
+      </div>
+      <div class="print-kpi-cell">
+        <div class="print-kpi-lbl">Estimated Cost</div>
+        <div class="print-kpi-val" style="color: #059669;">{% if report.metrics.estimated_electricity_cost_lkr is not none %}LKR {{ "%.2f"|format(report.metrics.estimated_electricity_cost_lkr) }}{% else %}--{% endif %}</div>
+      </div>
+      <div class="print-kpi-cell">
+        <div class="print-kpi-lbl">Peak Demand</div>
+        <div class="print-kpi-val" style="color: #e11d48;">{% if report.metrics.peak_demand_kw is not none %}{{ "%.1f"|format(report.metrics.peak_demand_kw) }}<span class="print-kpi-unit">kW</span>{% else %}--{% endif %}</div>
+      </div>
+      <div class="print-kpi-cell">
+        <div class="print-kpi-lbl">Average Demand</div>
+        <div class="print-kpi-val">{% if report.metrics.avg_active_power_kw is not none %}{{ "%.1f"|format(report.metrics.avg_active_power_kw) }}<span class="print-kpi-unit">kW</span>{% else %}--{% endif %}</div>
+      </div>
+
+      <div class="print-kpi-cell">
+        <div class="print-kpi-lbl">Load Factor</div>
+        <div class="print-kpi-val">{% if report.metrics.load_factor is not none %}{{ "%.2f"|format(report.metrics.load_factor) }}<span class="print-kpi-unit">({% if report.metrics.load_factor_pct is not none %}{{ "%.1f"|format(report.metrics.load_factor_pct) }}%{% else %}--%{% endif %})</span>{% else %}--{% endif %}</div>
+      </div>
+      <div class="print-kpi-cell">
+        <div class="print-kpi-lbl">Average Power Factor</div>
+        <div class="print-kpi-val">{% if report.metrics.avg_power_factor is not none %}{{ "%.3f"|format(report.metrics.avg_power_factor) }}{% else %}--{% endif %}</div>
+      </div>
+      <div class="print-kpi-cell">
+        <div class="print-kpi-lbl">After-Hours Energy</div>
+        <div class="print-kpi-val">{% if report.metrics.after_hours_kwh is not none %}{{ "%.2f"|format(report.metrics.after_hours_kwh) }}<span class="print-kpi-unit">kWh</span>{% else %}--{% endif %}</div>
+      </div>
+      <div class="print-kpi-cell">
+        <div class="print-kpi-lbl">Recorded Alerts</div>
+        <div class="print-kpi-val">{{ report.metrics.warning_alerts_count if report.metrics.warning_alerts_count is not none else 0 }} <span style="font-size: 0.75rem; color: #64748b;">Warn / </span>{{ report.metrics.critical_alerts_count if report.metrics.critical_alerts_count is not none else 0 }} <span style="font-size: 0.75rem; color: #ef4444;">Crit</span></div>
+      </div>
+    </div>
+
+    <!-- Section 2: Detailed Electrical Parameters Table -->
+    <div class="print-section-title">2. Three-Phase Electrical Operating Parameters</div>
+    <table class="print-table">
+      <thead>
+        <tr>
+          <th>Electrical Parameter</th>
+          <th>Measured Value</th>
+          <th>Nominal Standard / Statutory Limit</th>
+          <th>Operational Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Line-to-Line Voltage</strong></td>
+          <td>
+            {% if report.metrics.avg_voltage is not none %}
+              {{ "%.1f"|format(report.metrics.avg_voltage) }} V 
+              {% if report.metrics.min_voltage is not none and report.metrics.max_voltage is not none %}
+                (Min: {{ "%.1f"|format(report.metrics.min_voltage) }} V, Max: {{ "%.1f"|format(report.metrics.max_voltage) }} V)
+              {% endif %}
+            {% else %}
+              --
+            {% endif %}
+          </td>
+          <td>400 V &plusmn; 5% (380 V to 420 V)</td>
+          <td>{% if report.metrics.min_voltage is not none and report.metrics.min_voltage < 380 %}<span style="color: #ef4444; font-weight: 700;">Excursion Detected</span>{% elif report.metrics.avg_voltage is not none %}<span style="color: #059669;">Normal Compliance</span>{% else %}--{% endif %}</td>
+        </tr>
+        <tr>
+          <td><strong>System Frequency</strong></td>
+          <td>{% if report.metrics.avg_frequency is not none %}{{ "%.2f"|format(report.metrics.avg_frequency) }} Hz{% else %}--{% endif %}</td>
+          <td>50.0 Hz &plusmn; 1% (49.5 Hz to 50.5 Hz)</td>
+          <td>{% if report.metrics.avg_frequency is not none %}Synchronous Grid Normal{% else %}--{% endif %}</td>
+        </tr>
+        <tr>
+          <td><strong>Average Power Factor (PF)</strong></td>
+          <td>
+            {% if report.metrics.avg_power_factor is not none %}
+              {{ "%.3f"|format(report.metrics.avg_power_factor) }} 
+              {% if report.metrics.min_power_factor is not none %}
+                (Min Recorded: {{ "%.3f"|format(report.metrics.min_power_factor) }})
+              {% endif %}
+            {% else %}
+              --
+            {% endif %}
+          </td>
+          <td>&ge; 0.85 (CEB Utility Minimum)</td>
+          <td>
+            {% if report.metrics.avg_power_factor is not none %}
+              {% if report.metrics.avg_power_factor < 0.85 %}
+                <span style="color: #ef4444; font-weight: 700;">Sub-optimal / APFC Required</span>
+              {% else %}
+                <span style="color: #059669;">Compliant</span>
+              {% endif %}
+            {% else %}
+              --
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td><strong>Average Apparent Power (S)</strong></td>
+          <td>{% if report.metrics.avg_apparent_power_kva is not none %}{{ "%.2f"|format(report.metrics.avg_apparent_power_kva) }} kVA{% else %}--{% endif %}</td>
+          <td>Capacity-dependent</td>
+          <td>{% if report.metrics.avg_apparent_power_kva is not none %}Normal Vector Sum{% else %}--{% endif %}</td>
+        </tr>
+        <tr>
+          <td><strong>Average Reactive Power (Q)</strong></td>
+          <td>{% if report.metrics.avg_reactive_power_kvar is not none %}{{ "%.2f"|format(report.metrics.avg_reactive_power_kvar) }} kVAr{% else %}--{% endif %}</td>
+          <td>Minimize for inductive loads</td>
+          <td>{% if report.metrics.avg_reactive_power_kvar is not none %}Normal Inductive Draw{% else %}--{% endif %}</td>
+        </tr>
+        <tr>
+          <td><strong>Load Factor Utilization</strong></td>
+          <td>{% if report.metrics.load_factor is not none %}{{ "%.2f"|format(report.metrics.load_factor) }} ({{ "%.1f"|format(report.metrics.load_factor_pct) }}%){% else %}--{% endif %}</td>
+          <td>Target: &ge; 0.60 for optimal asset utilization</td>
+          <td>
+            {% if report.metrics.load_factor is not none %}
+              {% if report.metrics.load_factor < 0.40 %}
+                Low Asset Utilization
+              {% else %}
+                Adequate Load Profile
+              {% endif %}
+            {% else %}
+              --
+            {% endif %}
+          </td>
+        </tr>
+        <tr>
+          <td><strong>After-Hours Energy Ratio</strong></td>
+          <td>{% if report.metrics.after_hours_kwh is not none %}{{ "%.2f"|format(report.metrics.after_hours_kwh) }} kWh ({{ "%.1f"|format(report.metrics.after_hours_pct) }}% of total){% else %}--{% endif %}</td>
+          <td>Target: &le; 20% outside 08:00&ndash;17:00</td>
+          <td>
+            {% if report.metrics.after_hours_pct is not none %}
+              {% if report.metrics.after_hours_pct > 30.0 %}
+                <span style="color: #d97706; font-weight: 600;">High Off-Hours Consumption</span>
+              {% else %}
+                Normal Off-Hours Baseline
+              {% endif %}
+            {% else %}
+              --
+            {% endif %}
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Multi-Building Breakdown Table (Shown on Campus Summary mode) -->
+    {% if report.building_breakdown and report.building_breakdown|length > 0 %}
+    <div class="print-section-title">Faculty Complexes Energy &amp; Demand Breakdown</div>
+    <table class="print-table">
+      <thead>
+        <tr>
+          <th>Code</th>
+          <th>Building Name</th>
+          <th>Energy (kWh)</th>
+          <th>Est. Cost (LKR)</th>
+          <th>Peak Demand (kW)</th>
+          <th>Load Factor</th>
+          <th>Avg PF</th>
+          <th>After-Hours (kWh)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for b in report.building_breakdown %}
+        <tr>
+          <td><strong>{{ b.building_code }}</strong></td>
+          <td>{{ b.building_name }}</td>
+          <td>{% if b.total_kwh is not none %}{{ "%.2f"|format(b.total_kwh) }}{% else %}--{% endif %}</td>
+          <td style="color: #059669; font-weight: 600;">{% if b.estimated_cost_lkr is not none %}LKR {{ "%.2f"|format(b.estimated_cost_lkr) }}{% else %}--{% endif %}</td>
+          <td>{% if b.peak_demand_kw is not none %}{{ "%.1f"|format(b.peak_demand_kw) }}{% else %}--{% endif %}</td>
+          <td>{% if b.load_factor is not none %}{{ "%.2f"|format(b.load_factor) }} ({{ "%.1f"|format(b.load_factor_pct) }}%){% else %}--{% endif %}</td>
+          <td style="color: {% if b.avg_power_factor is not none and b.avg_power_factor < 0.85 %}#ef4444{% else %}inherit{% endif %}; font-weight: {% if b.avg_power_factor is not none and b.avg_power_factor < 0.85 %}700{% else %}normal{% endif %};">{% if b.avg_power_factor is not none %}{{ "%.3f"|format(b.avg_power_factor) }}{% else %}--{% endif %}</td>
+          <td>{% if b.after_hours_kwh is not none %}{{ "%.2f"|format(b.after_hours_kwh) }} ({{ "%.1f"|format(b.after_hours_pct) }}%){% else %}--{% endif %}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    <!-- Section 3: Engineering Observations -->
+    <div class="print-section-title">3. Electrical Engineering Observations &amp; Evidence</div>
+    <div class="print-obs-box">
+      <ul>
+        {% for obs in report.engineering_observations %}
+        <li style="margin-bottom: 0.35rem;">{{ obs }}</li>
+        {% else %}
+        <li>All monitored electrical parameters are within standard operating thresholds.</li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <!-- Section 4: Important Alerts Recorded (if any) -->
+    {% if report.important_alerts and report.important_alerts|length > 0 %}
+    <div class="print-section-title">4. Recent Electrical Anomaly &amp; Alert Events</div>
+    <table class="print-table">
+      <thead>
+        <tr>
+          <th>Timestamp</th>
+          <th>Alert Type</th>
+          <th>Severity</th>
+          <th>Measured Value</th>
+          <th>Threshold</th>
+          <th>Message</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in report.important_alerts[:5] %}
+        <tr>
+          <td>{{ a.timestamp }}</td>
+          <td><strong>{{ a.alert_type }}</strong></td>
+          <td style="color: {% if a.severity == 'CRITICAL' %}#ef4444{% else %}#d97706{% endif %}; font-weight: 700;">{{ a.severity }}</td>
+          <td>{{ a.measured_value }}</td>
+          <td>{{ a.threshold_value }}</td>
+          <td>{{ a.message }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% endif %}
+
+    <!-- Mandatory Academic Disclaimer Note (Req 8 & 16) -->
+    <footer class="print-disclaimer">
+      <p style="margin: 0 0 0.35rem 0; font-weight: 600; color: #334155;">
+        NOTICE: Measurements used in this prototype are simulated.
+      </p>
+      <p style="margin: 0;">
+        Cost estimates use a configurable demonstration institutional tariff model (Energy: LKR {{ "%.2f"|format(report.tariff.energy_rate_lkr_per_kwh) }}/kWh, Demand: LKR {{ "%.2f"|format(report.tariff.demand_rate_lkr_per_kw) }}/kW) and are not an official CEB bill. Prepared by Smart Energy Monitoring &amp; Analytics System, Faculty of Engineering, University of Ruhuna.
+      </p>
+    </footer>
+
+  </div>
+
+</body>
+</html>

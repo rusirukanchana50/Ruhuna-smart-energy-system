@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Historical Analytics | Faculty of Engineering Energy Portal</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <!-- Chart.js for energy analytics visualization -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <a href="{{ url_for('dashboard') }}" class="nav-brand">
+      <svg class="nav-brand-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="13 2 4 14 11 14 11 22 20 10 13 10 13 2" fill="url(#boltNavGrad)" stroke="#38bdf8" stroke-width="1.5" />
+        <defs>
+          <linearGradient id="boltNavGrad" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#38bdf8" />
+            <stop offset="1" stop-color="#f59e0b" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div>
+        <span class="nav-brand-title">Ruhuna Smart Energy</span>
+        <span class="nav-brand-sub">Faculty of Engineering &bull; University of Ruhuna</span>
+      </div>
+    </a>
+
+    <!-- Top Navigation Tabs -->
+    <nav class="nav-links">
+      <a href="{{ url_for('dashboard') }}" class="nav-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+        Live Monitor
+      </a>
+      <a href="{{ url_for('analytics_page') }}" class="nav-link active">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        Historical Analytics
+      </a>
+      <a href="{{ url_for('alerts_page') }}" class="nav-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        Electrical Alerts
+      </a>
+      <a href="{{ url_for('cost_efficiency_page') }}" class="nav-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23"></line>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+        Cost &amp; Efficiency
+      </a>
+      <a href="{{ url_for('reports_page') }}" class="nav-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+        Reports
+      </a>
+    </nav>
+
+    <div class="nav-actions">
+      <!-- User Profile Badge -->
+      <div class="user-profile-badge">
+        <div class="user-avatar" title="{{ session.get('full_name') }}">
+          {{ session.get('full_name', 'U')[0] | upper }}
+        </div>
+        <div class="user-info">
+          <span class="user-name">{{ session.get('full_name', 'User') }}</span>
+          <span class="user-role-tag {{ 'role-admin' if session.get('role') == 'Administrator' else 'role-viewer' }}">
+            {{ session.get('role', 'Viewer') }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Working Logout Form -->
+      <form action="{{ url_for('logout') }}" method="POST" style="margin: 0; display: inline;">
+        <button type="submit" class="btn btn-logout" title="Sign out of the system">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          Logout
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <!-- Main Analytics Container -->
+  <main class="dashboard-main">
+    
+    <!-- Top Scope Banner -->
+    <section class="welcome-banner" style="margin-bottom: 1.5rem;">
+      <div class="welcome-header">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem; flex-wrap: wrap;">
+            <h1 class="welcome-title" style="margin-bottom: 0;">Historical Energy Analytics</h1>
+            <span class="badge-simulated">⚡ SIMULATED TELEMETRY</span>
+          </div>
+          <p class="welcome-desc">
+            Analyze historical electrical demand, peak load factors, power quality, and energy consumption using stored database readings from <code>energy.db</code>.
+          </p>
+        </div>
+        <div class="status-pill">
+          <span class="pulse-dot"></span>
+          <span>Analytics Engine Active</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Filter Card with Quick Presets -->
+    <section class="filter-card">
+      <div class="filter-header">
+        <span style="font-size: 0.95rem; font-weight: 600; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--energy-cyan);">
+            <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+          </svg>
+          Query Filters &amp; Time Window
+        </span>
+
+        <!-- Quick Presets -->
+        <div class="filter-presets">
+          <span style="font-size: 0.75rem; color: var(--text-dim); margin-right: 0.25rem;">Quick Presets:</span>
+          <button type="button" class="preset-btn" data-preset="1h">Last Hour</button>
+          <button type="button" class="preset-btn" data-preset="today">Today</button>
+          <button type="button" class="preset-btn active" data-preset="24h">Last 24 Hours</button>
+          <button type="button" class="preset-btn" data-preset="7d">Last 7 Days</button>
+        </div>
+      </div>
+
+      <!-- Controls Form -->
+      <form id="analyticsFilterForm" class="filter-controls-grid" onsubmit="event.preventDefault(); triggerAnalytics();">
+        <!-- Building Selection -->
+        <div class="filter-group">
+          <label class="filter-label" for="filterBuilding">Facility / Building</label>
+          <select id="filterBuilding" class="filter-select">
+            <option value="all">Campus Facilities Comparison (All Registered Buildings)</option>
+            {% for b in buildings %}
+            <option value="{{ b.id }}">[{{ b.code }}] {{ b.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <!-- Start Date & Time -->
+        <div class="filter-group">
+          <label class="filter-label" for="filterStart">Start Date &amp; Time</label>
+          <input type="datetime-local" id="filterStart" class="filter-input" required>
+        </div>
+
+        <!-- End Date & Time -->
+        <div class="filter-group">
+          <label class="filter-label" for="filterEnd">End Date &amp; Time</label>
+          <input type="datetime-local" id="filterEnd" class="filter-input" required>
+        </div>
+
+        <!-- Analyze Button -->
+        <button type="submit" id="btnAnalyze" class="btn btn-primary" style="height: 42px; padding: 0 1.5rem;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="23 6 13.5 15.5 8.5 10.5 1 18"></polyline>
+            <polyline points="17 6 23 6 23 12"></polyline>
+          </svg>
+          Analyze
+        </button>
+      </form>
+    </section>
+
+    <!-- Error / Status Notice -->
+    <div id="analyticsAlert" class="alert alert-danger" style="display: none; margin-bottom: 1.5rem;"></div>
+
+    <!-- ====================================================================
+         SECTION A: Single-Building Analytics View (Shown when a specific building is chosen)
+         ==================================================================== -->
+    <div id="singleBuildingView" style="display: none;">
+      
+      <!-- 5 Key Metric KPI Cards -->
+      <section class="kpi-grid">
+        
+        <!-- Total Energy Consumed -->
+        <div class="kpi-card" style="--card-accent: var(--ruhuna-gold);">
+          <div class="kpi-header">
+            <span class="kpi-title">Energy Consumption</span>
+            <div class="kpi-icon icon-gold">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 20V10"></path><path d="M12 20V4"></path><path d="M6 20v-6"></path>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value-wrap">
+            <span id="kpiEnergyKwh" class="kpi-value">0.0</span>
+            <span class="kpi-unit">kWh</span>
+          </div>
+          <div class="kpi-subtext">True trapezoidal time-integrated energy</div>
+        </div>
+
+        <!-- Peak Demand -->
+        <div class="kpi-card" style="--card-accent: #f43f5e;">
+          <div class="kpi-header">
+            <span class="kpi-title">Peak Demand</span>
+            <div class="kpi-icon" style="background: rgba(244, 63, 94, 0.15); color: #f43f5e;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M18 15l-6-6-6 6"/>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value-wrap">
+            <span id="kpiPeakDemandKw" class="kpi-value">0.0</span>
+            <span class="kpi-unit">kW</span>
+          </div>
+          <div class="kpi-subtext">Maximum instantaneous active power</div>
+        </div>
+
+        <!-- Average Demand -->
+        <div class="kpi-card" style="--card-accent: var(--energy-cyan);">
+          <div class="kpi-header">
+            <span class="kpi-title">Average Demand</span>
+            <div class="kpi-icon icon-blue">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="5" y1="12" x2="19" y2="12"></line>
+              </svg>
+            </div>
+          </div>
+          <div class="kpi-value-wrap">
+            <span id="kpiAvgDemandKw" class="kpi-value">0.0</span>
+            <span class="kpi-unit">kW</span>
+          </div>
+          <div class="kpi-subtext">Mean active power across duration</div>
+        </div>
+
+        <!-- Average Power Factor -->
+        <div class="kpi-card" style="--card-accent: var(--success);">
+          <div class="kpi-header">
+            <span class="kpi-title">Average Power Factor</span>
+            <span id="kpiSinglePfBadge" class="pf-badge pf-good">Good</span>
+          </div>
+          <div class="kpi-value-wrap">
+            <span id="kpiAvgPfSingle" class="kpi-value">0.000</span>
+          </div>
+          <div class="kpi-subtext">Min observed: <span id="kpiMinPfSingle">0.000</span></div>
+        </div>
+
+        <!-- Load Factor -->
+        <div class="kpi-card" style="--card-accent: #a855f7;">
+          <div class="kpi-header">
+            <span class="kpi-title">Load Factor</span>
+            <span class="badge badge-code" title="Load Factor = Avg Active Power / Peak Active Power">P_avg / P_peak</span>
+          </div>
+          <div class="kpi-value-wrap">
+            <span id="kpiLoadFactorSingle" class="kpi-value">0.00</span>
+            <span class="kpi-unit" id="kpiLoadFactorPctSingle">(0.0%)</span>
+          </div>
+          <div class="kpi-subtext">Electrical asset utilization ratio</div>
+        </div>
+
+      </section>
+
+      <!-- Secondary Comprehensive Electrical Parameters -->
+      <section class="params-table-card">
+        <h3 style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 1rem;">
+          Detailed Three-Phase Operational Parameters
+        </h3>
+        <div class="params-grid">
+          <div class="param-box">
+            <span class="param-box-label">Min Active Power</span>
+            <span class="param-box-val"><span id="paramMinP">--</span> <small style="font-size: 0.7rem; color: var(--text-dim);">kW</small></span>
+          </div>
+          <div class="param-box">
+            <span class="param-box-label">Avg Apparent Power (S)</span>
+            <span class="param-box-val"><span id="paramAvgS">--</span> <small style="font-size: 0.7rem; color: var(--text-dim);">kVA</small></span>
+          </div>
+          <div class="param-box">
+            <span class="param-box-label">Avg Reactive Power (Q)</span>
+            <span class="param-box-val"><span id="paramAvgQ">--</span> <small style="font-size: 0.7rem; color: var(--text-dim);">kVAr</small></span>
+          </div>
+          <div class="param-box">
+            <span class="param-box-label">Average Voltage (V_L)</span>
+            <span class="param-box-val"><span id="paramAvgV">--</span> <small style="font-size: 0.7rem; color: var(--text-dim);">V</small></span>
+          </div>
+          <div class="param-box">
+            <span class="param-box-label">Voltage Range [Min / Max]</span>
+            <span class="param-box-val" style="font-size: 0.95rem;"><span id="paramMinV">--</span>V / <span id="paramMaxV">--</span>V</span>
+          </div>
+          <div class="param-box">
+            <span class="param-box-label">Average Current (I_L)</span>
+            <span class="param-box-val"><span id="paramAvgI">--</span> <small style="font-size: 0.7rem; color: var(--text-dim);">A</small></span>
+          </div>
+          <div class="param-box">
+            <span class="param-box-label">Average Frequency</span>
+            <span class="param-box-val"><span id="paramAvgF">--</span> <small style="font-size: 0.7rem; color: var(--text-dim);">Hz</small></span>
+          </div>
+          <div class="param-box">
+            <span class="param-box-label">Sampled Telemetry Records</span>
+            <span class="param-box-val" style="color: var(--energy-cyan);"><span id="paramCount">0</span> <small style="font-size: 0.7rem; color: var(--text-dim);">points</small></span>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4 Analytical Charts for Selected Facility -->
+      <section class="analytics-charts-grid">
+        
+        <!-- 1. Active Power vs Time -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h3 class="chart-title">Active Power vs Time (kW)</h3>
+              <span class="chart-desc">Real load demand progression</span>
+            </div>
+          </div>
+          <div class="chart-container-wrap">
+            <canvas id="chartActivePowerTime"></canvas>
+          </div>
+        </div>
+
+        <!-- 2. Energy Consumption vs Time -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h3 class="chart-title">Accumulated Energy vs Time (kWh)</h3>
+              <span class="chart-desc">Cumulative kilowatt-hour integration</span>
+            </div>
+          </div>
+          <div class="chart-container-wrap">
+            <canvas id="chartEnergyTime"></canvas>
+          </div>
+        </div>
+
+        <!-- 3. Power Factor vs Time -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h3 class="chart-title">Power Factor vs Time</h3>
+              <span class="chart-desc">Power quality and phase displacement efficiency</span>
+            </div>
+          </div>
+          <div class="chart-container-wrap">
+            <canvas id="chartPfTime"></canvas>
+          </div>
+        </div>
+
+        <!-- 4. Voltage vs Time -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <div>
+              <h3 class="chart-title">Line Voltage vs Time (V)</h3>
+              <span class="chart-desc">400 V nominal distribution stability</span>
+            </div>
+          </div>
+          <div class="chart-container-wrap">
+            <canvas id="chartVoltageTime"></canvas>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+    <!-- ====================================================================
+         SECTION B: Campus Facilities Comparison View (Shown when 'All Buildings' is selected)
+         ==================================================================== -->
+    <div id="comparisonView">
+      
+      <!-- Campus Total KPI Aggregation -->
+      <section class="kpi-grid">
+        <div class="kpi-card" style="--card-accent: var(--ruhuna-gold);">
+          <div class="kpi-header"><span class="kpi-title">Campus Total Energy</span></div>
+          <div class="kpi-value-wrap">
+            <span id="compTotalEnergy" class="kpi-value">0.0</span>
+            <span class="kpi-unit">kWh</span>
+          </div>
+          <div class="kpi-subtext">Cumulative energy across all registered campus facilities</div>
+        </div>
+
+        <div class="kpi-card" style="--card-accent: #f43f5e;">
+          <div class="kpi-header"><span class="kpi-title">Campus Peak Demand</span></div>
+          <div class="kpi-value-wrap">
+            <span id="compPeakPower" class="kpi-value">0.0</span>
+            <span class="kpi-unit">kW</span>
+          </div>
+          <div class="kpi-subtext">Highest active power recorded in period</div>
+        </div>
+
+        <div class="kpi-card" style="--card-accent: var(--energy-cyan);">
+          <div class="kpi-header"><span class="kpi-title">Campus Average Demand</span></div>
+          <div class="kpi-value-wrap">
+            <span id="compAvgPower" class="kpi-value">0.0</span>
+            <span class="kpi-unit">kW</span>
+          </div>
+          <div class="kpi-subtext">Mean combined active power</div>
+        </div>
+
+        <div class="kpi-card" style="--card-accent: var(--success);">
+          <div class="kpi-header"><span class="kpi-title">Campus Average PF</span></div>
+          <div class="kpi-value-wrap">
+            <span id="compAvgPf" class="kpi-value">0.000</span>
+          </div>
+          <div class="kpi-subtext">Campus-wide power factor index</div>
+        </div>
+
+        <div class="kpi-card" style="--card-accent: #a855f7;">
+          <div class="kpi-header"><span class="kpi-title">Campus Load Factor</span></div>
+          <div class="kpi-value-wrap">
+            <span id="compLoadFactor" class="kpi-value">0.00</span>
+            <span class="kpi-unit" id="compLoadFactorPct">(0.0%)</span>
+          </div>
+          <div class="kpi-subtext">Ratio of average to peak demand</div>
+        </div>
+      </section>
+
+      <!-- 3 Comparison Bar Charts -->
+      <section class="analytics-charts-grid" style="margin-bottom: 2rem;">
+        
+        <!-- Energy by Building -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3 class="chart-title">Total Energy Consumption by Facility (kWh)</h3>
+          </div>
+          <div class="chart-container-wrap">
+            <canvas id="chartCompEnergy"></canvas>
+          </div>
+        </div>
+
+        <!-- Peak Demand by Building -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3 class="chart-title">Peak Active Power Demand by Facility (kW)</h3>
+          </div>
+          <div class="chart-container-wrap">
+            <canvas id="chartCompPeak"></canvas>
+          </div>
+        </div>
+
+      </section>
+
+      <section style="margin-bottom: 2.5rem;">
+        <!-- Average PF by Building Bar Chart -->
+        <div class="chart-card">
+          <div class="chart-header">
+            <h3 class="chart-title">Average Power Factor by Facility</h3>
+          </div>
+          <div class="chart-container-wrap" style="min-height: 250px;">
+            <canvas id="chartCompPf"></canvas>
+          </div>
+        </div>
+      </section>
+
+      <!-- Campus Facilities Detailed Comparison Table -->
+      <section class="params-table-card">
+        <h3 style="font-size: 1.05rem; font-weight: 600; color: #fff; margin-bottom: 1.25rem;">
+          Faculty Facilities Comparative Analytics Table
+        </h3>
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Code</th>
+                <th>Building Name</th>
+                <th>Energy (kWh)</th>
+                <th>Peak Demand (kW)</th>
+                <th>Avg Demand (kW)</th>
+                <th>Avg Power Factor</th>
+                <th>Load Factor</th>
+                <th>Data Points</th>
+              </tr>
+            </thead>
+            <tbody id="comparisonTableBody">
+              <!-- Dynamically populated -->
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+
+  </main>
+
+  <!-- Historical Analytics Script -->
+  <script src="{{ url_for('static', filename='js/analytics.js') }}"></script>
+</body>
+</html>

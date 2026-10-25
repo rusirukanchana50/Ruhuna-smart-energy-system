@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token }}">
+  <title>Live Energy Monitoring | Faculty of Engineering, University of Ruhuna</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <!-- Chart.js for real-time electrical analytics -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+  <!-- Top Navigation Bar -->
+  <header class="navbar">
+    <a href="{{ url_for('dashboard') }}" class="nav-brand">
+      <!-- Ruhuna Energy Lightning Crest -->
+      <svg class="nav-brand-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="13 2 4 14 11 14 11 22 20 10 13 10 13 2" fill="url(#boltNavGrad)" stroke="#38bdf8" stroke-width="1.5" />
+        <defs>
+          <linearGradient id="boltNavGrad" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#38bdf8" />
+            <stop offset="1" stop-color="#f59e0b" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div>
+        <span class="nav-brand-title">Ruhuna Smart Energy</span>
+        <span class="nav-brand-sub">Faculty of Engineering &bull; University of Ruhuna</span>
+      </div>
+    </a>
+
+    <!-- Top Navigation Tabs -->
+    <nav class="nav-links">
+      <a href="{{ url_for('dashboard') }}" class="nav-link active">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+        </svg>
+        Live Monitor
+      </a>
+      <a href="{{ url_for('analytics_page') }}" class="nav-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        Historical Analytics
+      </a>
+      <a href="{{ url_for('alerts_page') }}" class="nav-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+          <line x1="12" y1="9" x2="12" y2="13"></line>
+          <line x1="12" y1="17" x2="12.01" y2="17"></line>
+        </svg>
+        Electrical Alerts
+        <span id="navAlertBadge" class="nav-alert-counter" style="display: none;">0</span>
+      </a>
+      <a href="{{ url_for('cost_efficiency_page') }}" class="nav-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="12" y1="1" x2="12" y2="23"></line>
+          <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path>
+        </svg>
+        Cost &amp; Efficiency
+      </a>
+      <a href="{{ url_for('reports_page') }}" class="nav-link">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+          <polyline points="14 2 14 8 20 8"></polyline>
+          <line x1="16" y1="13" x2="8" y2="13"></line>
+          <line x1="16" y1="17" x2="8" y2="17"></line>
+          <polyline points="10 9 9 9 8 9"></polyline>
+        </svg>
+        Reports
+      </a>
+    </nav>
+
+    <div class="nav-actions">
+      <!-- API Connection Status -->
+      <div id="connectionStatusPill" class="conn-status-pill conn-online" title="Backend telemetry connection status">
+        <span class="pulse-dot"></span>
+        <span id="connectionStatusText">API Online</span>
+      </div>
+
+      {% if session.get('role') == 'Administrator' %}
+      <!-- Manage Buildings Admin Button -->
+      <button type="button" class="btn btn-primary" id="openManageBuildingsBtn" onclick="openBuildingsModal()" style="padding: 0.45rem 0.95rem; font-size: 0.82rem; border-radius: 9999px; gap: 0.4rem;" title="Manage Campus Buildings">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+          <line x1="9" y1="22" x2="9" y2="22.01"></line>
+          <line x1="15" y1="22" x2="15" y2="22.01"></line>
+          <line x1="9" y1="6" x2="9" y2="6.01"></line>
+          <line x1="15" y1="6" x2="15" y2="6.01"></line>
+        </svg>
+        Manage Buildings
+      </button>
+      {% endif %}
+
+      <!-- User Profile Badge -->
+      <div class="user-profile-badge">
+        <div class="user-avatar" title="{{ session.get('full_name') }}">
+          {{ session.get('full_name', 'U')[0] | upper }}
+        </div>
+        <div class="user-info">
+          <span class="user-name">{{ session.get('full_name', 'User') }}</span>
+          <span class="user-role-tag {{ 'role-admin' if session.get('role') == 'Administrator' else 'role-viewer' }}">
+            {{ session.get('role', 'Viewer') }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Working Logout Form -->
+      <form action="{{ url_for('logout') }}" method="POST" style="margin: 0; display: inline;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-logout" title="Sign out of the system">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+            <polyline points="16 17 21 12 16 7"></polyline>
+            <line x1="21" y1="12" x2="9" y2="12"></line>
+          </svg>
+          Logout
+        </button>
+      </form>
+    </div>
+  </header>
+
+  <!-- Main Dashboard Content -->
+  <main class="dashboard-main">
+    
+    <!-- Top Welcome & System Status Banner -->
+    <section class="welcome-banner" style="margin-bottom: 1rem;">
+      <div class="welcome-header">
+        <div>
+          <div style="display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.4rem; flex-wrap: wrap;">
+            <h1 class="welcome-title" style="margin-bottom: 0;">Faculty Energy Monitoring Portal</h1>
+            <!-- Prominent Simulated Data Label -->
+            <span class="badge-simulated" title="Measurements generated via Python Three-Phase Simulator">
+              ⚡ SIMULATED DATA
+            </span>
+          </div>
+          <p class="welcome-desc">
+            Live three-phase telemetry across all registered campus facilities at the Hapugala engineering campus.
+            Real-time polling every <strong>5 seconds</strong> via <code>GET /api/energy/live</code>.
+          </p>
+        </div>
+        
+        <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 0.4rem;">
+          <div class="status-pill">
+            <span class="pulse-dot"></span>
+            <span>400 V / 50 Hz Grid Active</span>
+          </div>
+          <span id="lastUpdateTimestamp" style="font-size: 0.75rem; color: var(--text-dim);">Connecting...</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Real-Time Electrical Alert Counter Strip (Phase 6 Requirement 11) -->
+    <section class="alert-status-strip" id="dashboardAlertStrip" style="margin-bottom: 1.5rem;">
+      <div class="alert-strip-left">
+        <div class="alert-strip-title">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: #f59e0b;">
+            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+            <line x1="12" y1="9" x2="12" y2="13"></line>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+          <span style="font-weight: 600; color: #fff;">Electrical Condition Status:</span>
+        </div>
+        <div class="alert-strip-counters">
+          <a href="{{ url_for('alerts_page') }}?severity=CRITICAL" class="counter-badge counter-critical" id="badgeCriticalWrap">
+            <span class="pulse-dot-red"></span>
+            <span id="counterActiveCritical">0</span> Active Critical Alerts
+          </a>
+          <a href="{{ url_for('alerts_page') }}?severity=WARNING" class="counter-badge counter-warning" id="badgeWarningWrap">
+            <span class="pulse-dot-amber"></span>
+            <span id="counterActiveWarnings">0</span> Active Warnings
+          </a>
+        </div>
+      </div>
+      <a href="{{ url_for('alerts_page') }}" class="btn btn-view-alerts">
+        <span>View Alerts Hub</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="5" y1="12" x2="19" y2="12"></line>
+          <polyline points="12 5 19 12 12 19"></polyline>
+        </svg>
+      </a>
+    </section>
+
+    <!-- Graceful API Error Alert (Hidden by default) -->
+    <div id="dashboardErrorAlert" class="alert alert-danger" style="display: none; margin-bottom: 1.5rem;"></div>
+
+    <!-- Campus Overview KPI Cards (Aggregated Metrics) -->
+    <section class="kpi-grid">
+      
+      <!-- Total Active Power -->
+      <div class="kpi-card" style="--card-accent: var(--energy-cyan);">
+        <div class="kpi-header">
+          <span class="kpi-title">Total Active Power</span>
+          <div class="kpi-icon icon-blue">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+            </svg>
+          </div>
+        </div>
+        <div class="kpi-value-wrap">
+          <span id="kpiTotalActivePower" class="kpi-value">--.-</span>
+          <span class="kpi-unit">kW</span>
+        </div>
+        <div class="kpi-subtext">Sum of useful working power across campus</div>
+      </div>
+
+      <!-- Total Apparent Power -->
+      <div class="kpi-card" style="--card-accent: #818cf8;">
+        <div class="kpi-header">
+          <span class="kpi-title">Total Apparent Power</span>
+          <div class="kpi-icon" style="background: rgba(129, 140, 248, 0.15); color: #818cf8;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+          </div>
+        </div>
+        <div class="kpi-value-wrap">
+          <span id="kpiTotalApparentPower" class="kpi-value">--.-</span>
+          <span class="kpi-unit">kVA</span>
+        </div>
+        <div class="kpi-subtext">Total grid load capacity (√3 &times; V_L &times; I_L)</div>
+      </div>
+
+      <!-- Total Accumulated Energy -->
+      <div class="kpi-card" style="--card-accent: var(--ruhuna-gold);">
+        <div class="kpi-header">
+          <span class="kpi-title">Accumulated Energy</span>
+          <div class="kpi-icon icon-gold">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M18 20V10"></path>
+              <path d="M12 20V4"></path>
+              <path d="M6 20v-6"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="kpi-value-wrap">
+          <span id="kpiTotalEnergy" class="kpi-value">---</span>
+          <span class="kpi-unit">kWh</span>
+        </div>
+        <div class="kpi-subtext">Campus total cumulative consumption</div>
+      </div>
+
+      <!-- Campus Average Power Factor -->
+      <div class="kpi-card" style="--card-accent: var(--success);">
+        <div class="kpi-header">
+          <span class="kpi-title">Avg Power Factor</span>
+          <span id="kpiAvgPfBadge" class="pf-badge pf-good">Good</span>
+        </div>
+        <div class="kpi-value-wrap">
+          <span id="kpiAvgPf" class="kpi-value">0.---</span>
+        </div>
+        <div class="kpi-subtext">Target &ge; 0.90 for optimal efficiency</div>
+      </div>
+
+      <!-- Monitored Buildings Online -->
+      <div class="kpi-card" style="--card-accent: var(--energy-teal);">
+        <div class="kpi-header">
+          <span class="kpi-title">Monitored Facilities</span>
+          <div class="kpi-icon icon-green">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+              <polyline points="9 22 9 12 15 12 15 22"></polyline>
+            </svg>
+          </div>
+        </div>
+        <div class="kpi-value-wrap">
+          <span id="kpiOnlineCount" class="kpi-value">6 / 6</span>
+        </div>
+        <div class="kpi-subtext">Active 3-phase substation meters</div>
+      </div>
+
+    </section>
+
+    <!-- Real-Time Charts Section (Line Chart + Bar Chart) -->
+    <section class="charts-grid">
+      
+      <!-- Line Chart: Active Power Trends (Latest 30 Samples) -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <h3 class="chart-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--energy-cyan);">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+              </svg>
+              Live Active Power Trend (kW)
+            </h3>
+            <span class="chart-desc">Real-time telemetry updated every 5s &bull; Last 30 samples</span>
+          </div>
+          <span class="badge badge-code">P = S &times; PF</span>
+        </div>
+        <div class="chart-container-wrap">
+          <canvas id="activePowerLineChart"></canvas>
+        </div>
+      </div>
+
+      <!-- Bar Chart: Current Load Comparison -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <div>
+            <h3 class="chart-title">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--ruhuna-gold);">
+                <line x1="18" y1="20" x2="18" y2="10"></line>
+                <line x1="12" y1="20" x2="12" y2="4"></line>
+                <line x1="6" y1="20" x2="6" y2="14"></line>
+              </svg>
+              Active Power Comparison
+            </h3>
+            <span class="chart-desc">Building load distribution (kW)</span>
+          </div>
+        </div>
+        <div class="chart-container-wrap">
+          <canvas id="activePowerBarChart"></canvas>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Section Title: Registered Campus Facilities Telemetry Grid -->
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.25rem; flex-wrap: wrap; gap: 0.75rem;">
+      <h2 class="section-title" style="margin-bottom: 0;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="color: var(--energy-cyan);">
+          <rect x="3" y="3" width="7" height="7"></rect>
+          <rect x="14" y="3" width="7" height="7"></rect>
+          <rect x="14" y="14" width="7" height="7"></rect>
+          <rect x="3" y="14" width="7" height="7"></rect>
+        </svg>
+        Faculty Buildings Live Telemetry
+      </h2>
+      <div style="font-size: 0.78rem; color: var(--text-dim);">
+        Status: <span style="color: #34d399;">PF &ge; 0.90 (Good)</span> &bull; 
+        <span style="color: #fbbf24;">0.85-0.899 (Warning)</span> &bull; 
+        <span style="color: #f87171;">&lt; 0.85 (Poor)</span>
+      </div>
+    </div>
+
+    <!-- Dynamic Faculty Buildings Live Telemetry Grid -->
+    <section class="telemetry-grid" id="telemetryGrid">
+      {% for b in buildings %}
+      <div class="bldg-card" id="card_{{ b['code'] }}" data-building-code="{{ b['code'] }}" data-building-id="{{ b['id'] }}">
+        <div class="bldg-card-header">
+          <div class="bldg-title-wrap">
+            <span class="bldg-code-badge">{{ b['code'] }}</span>
+            <div>
+              <div class="bldg-name">{{ b['name'] }}</div>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">{{ b['description'] or 'Campus Facility' }}</div>
+            </div>
+          </div>
+          <span id="bldg_{{ b['code'] }}_pf_badge" class="pf-badge pf-good">Good</span>
+        </div>
+
+        <div class="metrics-grid">
+          <div class="metric-item">
+            <span class="metric-label">Voltage (V_L)</span>
+            <span class="metric-val"><span id="bldg_{{ b['code'] }}_v">---</span><small>V</small></span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Current (I_L)</span>
+            <span class="metric-val"><span id="bldg_{{ b['code'] }}_i">---</span><small>A</small></span>
+          </div>
+          <div class="metric-item metric-highlight">
+            <span class="metric-label">Active Power (P)</span>
+            <span class="metric-val"><span id="bldg_{{ b['code'] }}_p">---</span><small>kW</small></span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Apparent (S)</span>
+            <span class="metric-val"><span id="bldg_{{ b['code'] }}_s">---</span><small>kVA</small></span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Reactive (Q)</span>
+            <span class="metric-val"><span id="bldg_{{ b['code'] }}_q">---</span><small>kVAr</small></span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Power Factor</span>
+            <span class="metric-val"><span id="bldg_{{ b['code'] }}_pf">---</span></span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Frequency</span>
+            <span class="metric-val"><span id="bldg_{{ b['code'] }}_freq">---</span><small>Hz</small></span>
+          </div>
+          <div class="metric-item">
+            <span class="metric-label">Energy</span>
+            <span class="metric-val"><span id="bldg_{{ b['code'] }}_kwh">---</span><small>kWh</small></span>
+          </div>
+        </div>
+
+        <div class="bldg-card-footer">
+          <div class="footer-time">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <span id="bldg_{{ b['code'] }}_time">Connecting...</span>
+          </div>
+          <span class="badge-simulated">SIMULATED</span>
+        </div>
+      </div>
+      {% endfor %}
+    </section>
+
+  </main>
+
+  <!-- Manage Buildings Modal Container (Admin Only) -->
+  {% if session.get('role') == 'Administrator' %}
+  <div id="manageBuildingsModal" style="display: none; position: fixed; inset: 0; background: rgba(3, 7, 18, 0.82); backdrop-filter: blur(10px); z-index: 9999; align-items: center; justify-content: center; padding: 1.25rem;">
+    <div style="background: rgba(15, 23, 42, 0.98); border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 1.25rem; width: 100%; max-width: 840px; max-height: 90vh; overflow-y: auto; padding: 1.75rem; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.8);">
+      
+      <!-- Modal Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border-subtle); padding-bottom: 1rem; margin-bottom: 1.25rem;">
+        <div style="display: flex; align-items: center; gap: 0.65rem;">
+          <div style="width: 36px; height: 36px; border-radius: 0.5rem; background: rgba(56, 189, 248, 0.15); display: flex; align-items: center; justify-content: center; color: var(--energy-cyan);">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect>
+              <line x1="9" y1="22" x2="9" y2="22.01"></line>
+              <line x1="15" y1="22" x2="15" y2="22.01"></line>
+              <line x1="9" y1="6" x2="9" y2="6.01"></line>
+              <line x1="15" y1="6" x2="15" y2="6.01"></line>
+            </svg>
+          </div>
+          <div>
+            <h2 style="font-size: 1.2rem; font-weight: 700; color: #fff; margin: 0;">Manage Campus Buildings</h2>
+            <span style="font-size: 0.75rem; color: var(--text-muted);">View, edit rated capacity, and add facilities</span>
+          </div>
+        </div>
+        <button type="button" onclick="closeBuildingsModal()" style="background: transparent; border: none; color: var(--text-muted); font-size: 1.6rem; line-height: 1; cursor: pointer; padding: 0.2rem 0.5rem; border-radius: 0.35rem; transition: color 0.2s;" title="Close Modal">&times;</button>
+      </div>
+
+      <!-- In-Modal Feedback Notice -->
+      <div id="bldgModalNotice" style="display: none; padding: 0.85rem 1.1rem; border-radius: 0.5rem; margin-bottom: 1.25rem; font-size: 0.85rem; line-height: 1.45;"></div>
+
+      <!-- Current Buildings Table -->
+      <div style="overflow-x: auto; border: 1px solid var(--border-subtle); border-radius: 0.75rem; margin-bottom: 1.5rem; background: rgba(11, 17, 33, 0.65);">
+        <table style="width: 100%; border-collapse: collapse; font-size: 0.88rem; text-align: left;">
+          <thead>
+            <tr style="background: rgba(15, 23, 42, 0.95); border-bottom: 1px solid var(--border-subtle); color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;">
+              <th style="padding: 0.75rem 1rem;">Code</th>
+              <th style="padding: 0.75rem 1rem;">Building Name</th>
+              <th style="padding: 0.75rem 1rem;">Rated Power</th>
+              <th style="padding: 0.75rem 1rem; text-align: right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in buildings %}
+            <tr id="bldg-row-{{ b['id'] }}" style="border-bottom: 1px solid rgba(255, 255, 255, 0.05);">
+              <td style="padding: 0.75rem 1rem; font-family: var(--font-mono); color: var(--energy-cyan); font-weight: 600;">
+                <span id="bldg-code-display-{{ b['id'] }}">{{ b['code'] }}</span>
+                <input type="text" id="bldg-code-input-{{ b['id'] }}" value="{{ b['code'] }}" style="display: none; width: 75px; background: var(--bg-input); border: 1px solid var(--border-subtle); color: #fff; padding: 0.35rem 0.5rem; border-radius: 0.4rem; font-family: var(--font-mono); font-size: 0.85rem; text-transform: uppercase;">
+              </td>
+              <td style="padding: 0.75rem 1rem;">
+                <span id="bldg-name-display-{{ b['id'] }}" style="color: var(--text-main); font-weight: 500;">{{ b['name'] }}</span>
+                <input type="text" id="bldg-name-input-{{ b['id'] }}" value="{{ b['name'] }}" style="display: none; width: 100%; background: var(--bg-input); border: 1px solid var(--border-subtle); color: #fff; padding: 0.35rem 0.6rem; border-radius: 0.4rem; font-size: 0.85rem;">
+              </td>
+              <td style="padding: 0.75rem 1rem;">
+                <span id="bldg-power-display-{{ b['id'] }}" style="font-family: var(--font-mono); color: var(--ruhuna-gold-light);">{{ b['rated_power_kw'] if 'rated_power_kw' in b.keys() and b['rated_power_kw'] else 50.0 }} kW</span>
+                <input type="number" step="0.5" min="0.1" id="bldg-power-input-{{ b['id'] }}" value="{{ b['rated_power_kw'] if 'rated_power_kw' in b.keys() and b['rated_power_kw'] else 50.0 }}" style="display: none; width: 95px; background: var(--bg-input); border: 1px solid var(--border-subtle); color: #fff; padding: 0.35rem 0.6rem; border-radius: 0.4rem; font-family: var(--font-mono); font-size: 0.85rem;">
+              </td>
+              <td style="padding: 0.75rem 1rem; text-align: right; white-space: nowrap;">
+                <button type="button" id="bldg-edit-btn-{{ b['id'] }}" onclick="toggleEditBuilding({{ b['id'] }})" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 0.4rem; cursor: pointer; transition: all 0.2s;">
+                  Edit
+                </button>
+                <button type="button" id="bldg-save-btn-{{ b['id'] }}" onclick="saveBuildingEdit({{ b['id'] }})" style="display: none; padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.45); border-radius: 0.4rem; cursor: pointer;">
+                  Save
+                </button>
+                <button type="button" id="bldg-cancel-btn-{{ b['id'] }}" onclick="cancelEditBuilding({{ b['id'] }})" style="display: none; padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 0.4rem; cursor: pointer; margin-left: 0.35rem;">
+                  Cancel
+                </button>
+                <button type="button" onclick="deleteBuilding({{ b['id'] }}, '{{ b['name'] }}')" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 0.4rem; cursor: pointer; margin-left: 0.35rem; transition: all 0.2s;">
+                  Delete
+                </button>
+                <button type="button" 
+                        id="bldg-del-sim-btn-{{ b['id'] }}"
+                        class="bldg-del-sim-btn"
+                        data-building-id="{{ b['id'] }}"
+                        data-building-code="{{ b['code'] }}"
+                        onclick="openDeleteSimulatedModal({{ b['id'] }}, '{{ b['code'] }}', '{{ b['name'] }}')" 
+                        style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: rgba(220, 38, 38, 0.25); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.55); border-radius: 0.4rem; cursor: pointer; margin-left: 0.35rem; transition: all 0.2s;" 
+                        title="Delete demonstration facility and all associated simulated telemetry">
+                  Delete Building and Simulated Data
+                </button>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Add Building Form -->
+      <div style="background: rgba(11, 17, 33, 0.75); border: 1px solid var(--border-subtle); border-radius: 0.75rem; padding: 1.25rem;">
+        <h3 style="font-size: 0.95rem; font-weight: 600; color: #fff; margin-bottom: 0.85rem; display: flex; align-items: center; gap: 0.45rem;">
+          <span style="color: var(--energy-cyan);">+</span> Add New Building
+        </h3>
+        <form id="addBuildingForm" onsubmit="submitAddBuilding(event)" style="display: flex; gap: 0.85rem; align-items: flex-end; flex-wrap: wrap;">
+          <div style="flex: 1; min-width: 100px;">
+            <label style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 0.35rem;">Code (2-10 chars)</label>
+            <input type="text" id="newBldgCode" placeholder="e.g. LIB" maxlength="10" required style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-subtle); color: #fff; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-family: var(--font-mono); text-transform: uppercase;">
+          </div>
+          <div style="flex: 2; min-width: 180px;">
+            <label style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 0.35rem;">Name (2-100 chars)</label>
+            <input type="text" id="newBldgName" placeholder="e.g. Faculty Library" maxlength="100" required style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-subtle); color: #fff; padding: 0.5rem 0.75rem; border-radius: 0.5rem;">
+          </div>
+          <div style="flex: 1.2; min-width: 130px;">
+            <label style="font-size: 0.75rem; font-weight: 500; color: var(--text-muted); display: block; margin-bottom: 0.35rem;">Rated Power (kW &gt; 0)</label>
+            <input type="number" step="0.5" min="0.1" max="10000" id="newBldgRatedPower" placeholder="50.0" required style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-subtle); color: #fff; padding: 0.5rem 0.75rem; border-radius: 0.5rem; font-family: var(--font-mono);">
+          </div>
+          <button type="submit" class="btn btn-primary" style="padding: 0.52rem 1.25rem; font-size: 0.88rem; height: 38px; border-radius: 0.5rem; white-space: nowrap;">
+            Submit
+          </button>
+        </form>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Modal: Delete Building and Simulated Data (Admin Demonstration Cleanup) -->
+  <div id="deleteSimulatedModal" style="display: none; position: fixed; inset: 0; z-index: 10000; background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(4px); align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: #0f172a; border: 1px solid rgba(239, 68, 68, 0.45); border-radius: 0.75rem; width: 100%; max-width: 530px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.85); overflow: hidden;">
+      
+      <!-- Modal Header -->
+      <div style="display: flex; justify-content: space-between; align-items: center; padding: 1.1rem 1.4rem; border-bottom: 1px solid rgba(239, 68, 68, 0.25); background: rgba(239, 68, 68, 0.08);">
+        <div style="display: flex; align-items: center; gap: 0.65rem;">
+          <div style="width: 34px; height: 34px; border-radius: 0.45rem; background: rgba(239, 68, 68, 0.2); display: flex; align-items: center; justify-content: center; color: #f87171;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+              <line x1="12" y1="9" x2="12" y2="13"></line>
+              <line x1="12" y1="17" x2="12.01" y2="17"></line>
+            </svg>
+          </div>
+          <div>
+            <h3 style="font-size: 1.1rem; font-weight: 700; color: #fff; margin: 0;">Delete Building and Simulated Data</h3>
+            <span style="font-size: 0.72rem; color: #fca5a5;">Permanent Demonstration Facility Removal</span>
+          </div>
+        </div>
+        <button type="button" onclick="closeDeleteSimulatedModal()" style="background: transparent; border: none; color: var(--text-muted); font-size: 1.5rem; line-height: 1; cursor: pointer; padding: 0.2rem 0.5rem; border-radius: 0.35rem; transition: color 0.2s;" title="Close Modal">&times;</button>
+      </div>
+
+      <!-- Modal Body -->
+      <div style="padding: 1.4rem;">
+        
+        <!-- Permanent Deletion Warning Banner -->
+        <div style="background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 0.5rem; padding: 0.85rem 1rem; margin-bottom: 1.25rem; font-size: 0.82rem; line-height: 1.45; color: #fca5a5;">
+          <strong>PERMANENT REMOVAL WARNING:</strong>
+          This operation will permanently purge this demonstration building, its historical simulated energy readings, and all associated alerts. An automated point-in-time database backup will be created before deletion.
+        </div>
+
+        <!-- Feedback Alert Box -->
+        <div id="deleteSimModalNotice" style="display: none; padding: 0.75rem 1rem; border-radius: 0.5rem; margin-bottom: 1.1rem; font-size: 0.83rem;"></div>
+
+        <!-- Preview Info Card -->
+        <div id="deleteSimPreviewBox" style="background: rgba(15, 23, 42, 0.6); border: 1px solid var(--border-subtle); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.25rem;">
+          <div id="deleteSimLoading" style="text-align: center; color: var(--text-muted); font-size: 0.85rem; padding: 0.5rem 0;">
+            Fetching pre-deletion preview...
+          </div>
+          <div id="deleteSimDetails" style="display: none; font-size: 0.85rem;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.4rem;">
+              <span style="color: var(--text-muted);">Target Facility:</span>
+              <strong id="delPreviewBldgName" style="color: #fff;">---</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.4rem;">
+              <span style="color: var(--text-muted);">Building Code:</span>
+              <span id="delPreviewBldgCode" style="font-family: var(--font-mono); color: var(--energy-cyan); font-weight: 700;">---</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.4rem;">
+              <span style="color: var(--text-muted);">Simulated Readings to Remove:</span>
+              <strong id="delPreviewReadings" style="color: #f87171; font-family: var(--font-mono);">0 records</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 0.4rem;">
+              <span style="color: var(--text-muted);">Alert Records to Remove:</span>
+              <strong id="delPreviewAlerts" style="color: #fbbf24; font-family: var(--font-mono);">0 records</strong>
+            </div>
+            <div style="display: flex; justify-content: space-between;">
+              <span style="color: var(--text-muted);">Simulation Integrity:</span>
+              <span id="delPreviewEligibility" style="font-weight: 600; color: #34d399;">Fully Simulated (Eligible)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Code Confirmation Section -->
+        <div id="deleteSimConfirmSection" style="display: none;">
+          <label style="display: block; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.45rem;">
+            To confirm permanent deletion, type the exact building code <strong id="deleteSimExpectedCode" style="color: #38bdf8; font-family: var(--font-mono);">---</strong>:
+          </label>
+          <input type="text" id="deleteSimCodeInput" oninput="validateDeleteSimCodeInput()" placeholder="Type exact code here" autocomplete="off" style="width: 100%; background: var(--bg-input); border: 1px solid var(--border-subtle); color: #fff; padding: 0.6rem 0.85rem; border-radius: 0.5rem; font-family: var(--font-mono); font-size: 0.92rem; text-transform: uppercase; margin-bottom: 1.25rem;">
+        </div>
+
+        <!-- Modal Footer Actions -->
+        <div style="display: flex; justify-content: flex-end; gap: 0.65rem;">
+          <button type="button" onclick="closeDeleteSimulatedModal()" class="btn" style="background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); padding: 0.5rem 1rem; border-radius: 0.5rem; font-size: 0.85rem; cursor: pointer;">
+            Cancel
+          </button>
+          <button type="button" id="confirmDeleteSimBtn" onclick="executeDeleteSimulatedData()" disabled style="background: #dc2626; color: #ffffff; border: 1px solid #b91c1c; padding: 0.5rem 1.15rem; border-radius: 0.5rem; font-size: 0.85rem; font-weight: 600; cursor: not-allowed; opacity: 0.45; transition: all 0.2s;">
+            Delete Building and Simulated Data
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Inline JavaScript for Building CRUD Operations -->
+  <script>
+    function openBuildingsModal() {
+      var modal = document.getElementById('manageBuildingsModal');
+      if (modal) modal.style.display = 'flex';
+      checkNonCoreBuildingsEligibility();
+    }
+
+    async function checkNonCoreBuildingsEligibility() {
+      var delBtns = document.querySelectorAll('.bldg-del-sim-btn');
+      if (!delBtns || delBtns.length === 0) return;
+
+      delBtns.forEach(async function(btn) {
+        var bldgId = btn.getAttribute('data-building-id');
+        if (!bldgId) return;
+
+        try {
+          var res = await fetch('/api/buildings/' + bldgId + '/delete-preview');
+          var data = await res.json();
+          if (res.ok && data.status === 'success' && data.preview) {
+            var p = data.preview;
+            if (!p.can_delete) {
+              btn.disabled = true;
+              btn.style.opacity = '0.45';
+              btn.style.cursor = 'not-allowed';
+              btn.style.background = 'rgba(100, 116, 139, 0.2)';
+              btn.style.borderColor = 'rgba(100, 116, 139, 0.4)';
+              btn.style.color = '#94a3b8';
+              btn.title = 'Cleanup Disabled: ' + (p.rejection_reason || 'Ineligible for deletion');
+            } else {
+              btn.disabled = false;
+              btn.style.opacity = '1';
+              btn.style.cursor = 'pointer';
+              btn.style.background = 'rgba(220, 38, 38, 0.25)';
+              btn.style.borderColor = 'rgba(239, 68, 68, 0.55)';
+              btn.style.color = '#fca5a5';
+              btn.title = 'Delete demonstration facility and all associated simulated telemetry';
+            }
+          }
+        } catch (err) {
+          console.warn('[Building Management] Could not fetch preview for building #' + bldgId, err);
+        }
+      });
+    }
+
+    document.addEventListener('DOMContentLoaded', checkNonCoreBuildingsEligibility);
+
+    function closeBuildingsModal() {
+      var modal = document.getElementById('manageBuildingsModal');
+      if (modal) modal.style.display = 'none';
+    }
+
+    // Close on clicking backdrop
+    window.addEventListener('click', function(e) {
+      var modal = document.getElementById('manageBuildingsModal');
+      var delSimModal = document.getElementById('deleteSimulatedModal');
+      if (e.target === modal) {
+        closeBuildingsModal();
+      }
+      if (e.target === delSimModal) {
+        closeDeleteSimulatedModal();
+      }
+    });
+
+    function showModalNotice(message, isError) {
+      var box = document.getElementById('bldgModalNotice');
+      if (!box) return;
+      box.style.display = 'block';
+      if (isError) {
+        box.style.background = 'rgba(239, 68, 68, 0.15)';
+        box.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+        box.style.color = '#fca5a5';
+      } else {
+        box.style.background = 'rgba(16, 185, 129, 0.15)';
+        box.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+        box.style.color = '#6ee7b7';
+      }
+      box.textContent = message;
+    }
+
+    function getCsrfToken() {
+      var el = document.querySelector('meta[name="csrf-token"]');
+      return el ? el.getAttribute('content') : '';
+    }
+
+    async function submitAddBuilding(e) {
+      e.preventDefault();
+      var codeInput = document.getElementById('newBldgCode');
+      var nameInput = document.getElementById('newBldgName');
+      var powerInput = document.getElementById('newBldgRatedPower');
+
+      var code = codeInput ? codeInput.value.trim().toUpperCase() : '';
+      var name = nameInput ? nameInput.value.trim() : '';
+      var rawPower = powerInput ? powerInput.value.trim() : '';
+      var rated_power_kw = parseFloat(rawPower);
+
+      // Client-Side Validation
+      if (!code || code.length < 2 || code.length > 10) {
+        showModalNotice('Validation Error: Building code is required and must be 2 to 10 characters.', true);
+        return;
+      }
+      if (!/^[A-Z0-9_-]+$/.test(code)) {
+        showModalNotice('Validation Error: Building code may only contain letters, numbers, hyphens, and underscores.', true);
+        return;
+      }
+      if (!name || name.length < 2 || name.length > 100) {
+        showModalNotice('Validation Error: Building name is required and must be 2 to 100 characters.', true);
+        return;
+      }
+      if (!rawPower || isNaN(rated_power_kw) || !isFinite(rated_power_kw) || rated_power_kw <= 0 || rated_power_kw > 10000) {
+        showModalNotice('Validation Error: Rated power must be a valid positive number greater than 0 kW (max 10,000 kW).', true);
+        return;
+      }
+
+      try {
+        var res = await fetch('/api/buildings/create', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': getCsrfToken()
+          },
+          body: JSON.stringify({ code: code, name: name, rated_power_kw: rated_power_kw, csrf_token: getCsrfToken() })
+        });
+        var data = await res.json();
+        if (res.ok && data.status === 'success') {
+          showModalNotice('Building added successfully!', false);
+          setTimeout(function() { window.location.reload(); }, 600);
+        } else {
+          showModalNotice(data.message || 'Failed to add building.', true);
+        }
+      } catch (err) {
+        showModalNotice('Request error: ' + err.message, true);
+      }
+    }
+
+    function toggleEditBuilding(id) {
+      var codeDisp = document.getElementById('bldg-code-display-' + id);
+      var codeInp = document.getElementById('bldg-code-input-' + id);
+      var nameDisp = document.getElementById('bldg-name-display-' + id);
+      var nameInp = document.getElementById('bldg-name-input-' + id);
+      var pwrDisp = document.getElementById('bldg-power-display-' + id);
+      var pwrInp = document.getElementById('bldg-power-input-' + id);
+
+      if (codeDisp) codeDisp.style.display = 'none';
+      if (codeInp) codeInp.style.display = 'inline-block';
+      if (nameDisp) nameDisp.style.display = 'none';
+      if (nameInp) nameInp.style.display = 'block';
+      if (pwrDisp) pwrDisp.style.display = 'none';
+      if (pwrInp) pwrInp.style.display = 'block';
+
+      document.getElementById('bldg-edit-btn-' + id).style.display = 'none';
+      document.getElementById('bldg-save-btn-' + id).style.display = 'inline-block';
+      document.getElementById('bldg-cancel-btn-' + id).style.display = 'inline-block';
+    }
+
+    function cancelEditBuilding(id) {
+      var codeDisp = document.getElementById('bldg-code-display-' + id);
+      var codeInp = document.getElementById('bldg-code-input-' + id);
+      var nameDisp = document.getElementById('bldg-name-display-' + id);
+      var nameInp = document.getElementById('bldg-name-input-' + id);
+      var pwrDisp = document.getElementById('bldg-power-display-' + id);
+      var pwrInp = document.getElementById('bldg-power-input-' + id);
+
+      if (codeDisp) codeDisp.style.display = 'inline';
+      if (codeInp) codeInp.style.display = 'none';
+      if (nameDisp) nameDisp.style.display = 'inline';
+      if (nameInp) nameInp.style.display = 'none';
+      if (pwrDisp) pwrDisp.style.display = 'inline';
+      if (pwrInp) pwrInp.style.display = 'none';
+
+      document.getElementById('bldg-edit-btn-' + id).style.display = 'inline-block';
+      document.getElementById('bldg-save-btn-' + id).style.display = 'none';
+      document.getElementById('bldg-cancel-btn-' + id).style.display = 'none';
+    }
+
+    async function saveBuildingEdit(id) {
+      var codeInp = document.getElementById('bldg-code-input-' + id);
+      var nameInp = document.getElementById('bldg-name-input-' + id);
+      var powerInp = document.getElementById('bldg-power-input-' + id);
+
+      var code = codeInp ? codeInp.value.trim().toUpperCase() : null;
+      var name = nameInp ? nameInp.value.trim() : '';
+      var rawPower = powerInp ? powerInp.value.trim() : '';
+      var rated_power_kw = parseFloat(rawPower);
+
+      // Client-Side Validation
+      if (code && (code.length < 2 || code.length > 10 || !/^[A-Z0-9_-]+$/.test(code))) {
+        showModalNotice('Validation Error: Building code must be 2 to 10 alphanumeric characters/hyphens/underscores.', true);
+        return;
+      }
+      if (!name || name.length < 2 || name.length > 100) {
+        showModalNotice('Validation Error: Building name must be between 2 and 100 characters.', true);
+        return;
+      }
+      if (!rawPower || isNaN(rated_power_kw) || !isFinite(rated_power_kw) || rated_power_kw <= 0 || rated_power_kw > 10000) {
+        showModalNotice('Validation Error: Rated power must be a positive number greater than 0 kW (max 10,000 kW).', true);
+        return;
+      }
+
+      var payload = { name: name, rated_power_kw: rated_power_kw, csrf_token: getCsrfToken() };
+      if (code) payload.code = code;
+
+      try {
+        var res = await fetch('/api/buildings/' + id + '/update', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': getCsrfToken()
+          },
+          body: JSON.stringify(payload)
+        });
+        var data = await res.json();
+        if (res.ok && data.status === 'success') {
+          showModalNotice('Building updated successfully!', false);
+          setTimeout(function() { window.location.reload(); }, 600);
+        } else {
+          showModalNotice(data.message || 'Failed to update building.', true);
+        }
+      } catch (err) {
+        showModalNotice('Request error: ' + err.message, true);
+      }
+    }
+
+    function showModalNotice(message, isError) {
+      var box = document.getElementById('bldgModalNotice');
+      if (!box) return;
+      box.style.display = 'block';
+      if (isError) {
+        box.style.background = 'rgba(239, 68, 68, 0.15)';
+        box.style.border = '1px solid rgba(239, 68, 68, 0.4)';
+        box.style.color = '#fca5a5';
+      } else {
+        box.style.background = 'rgba(16, 185, 129, 0.15)';
+        box.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+        box.style.color = '#6ee7b7';
+      }
+      box.textContent = message;
+    }
+
+    async function deleteBuilding(id, name) {
+      if (!confirm('Are you sure you want to delete building "' + name + '"?')) {
+        return;
+      }
+
+      try {
+        var res = await fetch('/api/buildings/' + id + '/delete', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': getCsrfToken()
+          },
+          body: JSON.stringify({ csrf_token: getCsrfToken() })
+        });
+        var data = await res.json();
+        if (res.ok && data.status === 'success') {
+          window.location.reload();
+        } else {
+          var errorMsg = data.message || 'Unknown error occurred while attempting to delete building.';
+          showModalNotice(errorMsg, true);
+          alert('Deletion Blocked:\n' + errorMsg);
+        }
+      } catch (err) {
+        var networkMsg = 'Request error: ' + err.message;
+        showModalNotice(networkMsg, true);
+        alert(networkMsg);
+      }
+    }
+
+    /* --- Safe Demonstration Cleanup Functions --- */
+    var currentDelSimBuildingId = null;
+    var currentDelSimExpectedCode = '';
+
+    async function openDeleteSimulatedModal(bldgId, code, name) {
+      currentDelSimBuildingId = bldgId;
+      currentDelSimExpectedCode = code;
+
+      var modal = document.getElementById('deleteSimulatedModal');
+      var loading = document.getElementById('deleteSimLoading');
+      var details = document.getElementById('deleteSimDetails');
+      var confirmSec = document.getElementById('deleteSimConfirmSection');
+      var confirmBtn = document.getElementById('confirmDeleteSimBtn');
+      var codeInput = document.getElementById('deleteSimCodeInput');
+      var noticeBox = document.getElementById('deleteSimModalNotice');
+
+      if (!modal) return;
+      modal.style.display = 'flex';
+
+      if (noticeBox) noticeBox.style.display = 'none';
+      if (loading) loading.style.display = 'block';
+      if (details) details.style.display = 'none';
+      if (confirmSec) confirmSec.style.display = 'none';
+      if (confirmBtn) {
+        confirmBtn.disabled = true;
+        confirmBtn.style.opacity = '0.45';
+        confirmBtn.style.cursor = 'not-allowed';
+        confirmBtn.textContent = 'Delete Building and Simulated Data';
+      }
+      if (codeInput) codeInput.value = '';
+
+      var expEl = document.getElementById('deleteSimExpectedCode');
+      if (expEl) expEl.textContent = code;
+
+      try {
+        var res = await fetch('/api/buildings/' + bldgId + '/delete-preview');
+        var data = await res.json();
+
+        if (res.ok && data.status === 'success' && data.preview) {
+          var p = data.preview;
+          loading.style.display = 'none';
+          details.style.display = 'block';
+
+          document.getElementById('delPreviewBldgName').textContent = p.name;
+          document.getElementById('delPreviewBldgCode').textContent = p.code;
+          document.getElementById('delPreviewReadings').textContent = p.simulated_readings + ' record(s)';
+          document.getElementById('delPreviewAlerts').textContent = p.alerts_count + ' record(s)';
+
+          var eligEl = document.getElementById('delPreviewEligibility');
+          if (p.can_delete) {
+            eligEl.textContent = 'Fully Simulated (Eligible for Cleanup)';
+            eligEl.style.color = '#34d399';
+            confirmSec.style.display = 'block';
+          } else {
+            eligEl.textContent = 'Ineligible: ' + (p.rejection_reason || 'Deletion restricted');
+            eligEl.style.color = '#f87171';
+            confirmSec.style.display = 'none';
+            showDeleteSimNotice(p.rejection_reason || 'This building cannot be deleted.', true);
+          }
+        } else {
+          loading.style.display = 'none';
+          showDeleteSimNotice(data.message || 'Failed to fetch pre-deletion preview.', true);
+        }
+      } catch (err) {
+        loading.style.display = 'none';
+        showDeleteSimNotice('Network error: ' + err.message, true);
+      }
+    }
+
+    function closeDeleteSimulatedModal() {
+      var modal = document.getElementById('deleteSimulatedModal');
+      if (modal) modal.style.display = 'none';
+      currentDelSimBuildingId = null;
+      currentDelSimExpectedCode = '';
+    }
+
+    function validateDeleteSimCodeInput() {
+      var input = document.getElementById('deleteSimCodeInput');
+      var btn = document.getElementById('confirmDeleteSimBtn');
+      if (!input || !btn) return;
+
+      var typed = input.value.trim().toUpperCase();
+      if (typed === currentDelSimExpectedCode.toUpperCase()) {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+        btn.style.cursor = 'pointer';
+      } else {
+        btn.disabled = true;
+        btn.style.opacity = '0.45';
+        btn.style.cursor = 'not-allowed';
+      }
+    }
+
+    function showDeleteSimNotice(msg, isError) {
+      var box = document.getElementById('deleteSimModalNotice');
+      if (!box) return;
+      box.style.display = 'block';
+      if (isError) {
+        box.style.background = 'rgba(239, 68, 68, 0.18)';
+        box.style.border = '1px solid rgba(239, 68, 68, 0.45)';
+        box.style.color = '#fca5a5';
+      } else {
+        box.style.background = 'rgba(16, 185, 129, 0.18)';
+        box.style.border = '1px solid rgba(16, 185, 129, 0.45)';
+        box.style.color = '#6ee7b7';
+      }
+      box.textContent = msg;
+    }
+
+    async function executeDeleteSimulatedData() {
+      if (!currentDelSimBuildingId || !currentDelSimExpectedCode) return;
+      var input = document.getElementById('deleteSimCodeInput');
+      var typedCode = input ? input.value.trim().toUpperCase() : '';
+
+      if (typedCode !== currentDelSimExpectedCode.toUpperCase()) {
+        showDeleteSimNotice('Please type the exact building code "' + currentDelSimExpectedCode + '" to confirm.', true);
+        return;
+      }
+
+      var btn = document.getElementById('confirmDeleteSimBtn');
+      if (btn) {
+        btn.disabled = true;
+        btn.textContent = 'Purging Data & Creating Backup...';
+      }
+
+      try {
+        var res = await fetch('/api/buildings/' + currentDelSimBuildingId + '/delete-simulated', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': getCsrfToken()
+          },
+          body: JSON.stringify({
+            confirm_code: typedCode,
+            csrf_token: getCsrfToken()
+          })
+        });
+
+        var data = await res.json();
+        if (res.ok && data.status === 'success') {
+          showDeleteSimNotice('Success: ' + data.message + ' Refreshing...', false);
+          setTimeout(function() {
+            window.location.reload();
+          }, 800);
+        } else {
+          var errorMsg = data.message || 'Failed to delete building and simulated data.';
+          showDeleteSimNotice(errorMsg, true);
+          if (btn) {
+            btn.disabled = false;
+            btn.textContent = 'Delete Building and Simulated Data';
+          }
+        }
+      } catch (err) {
+        showDeleteSimNotice('Request error: ' + err.message, true);
+        if (btn) {
+          btn.disabled = false;
+          btn.textContent = 'Delete Building and Simulated Data';
+        }
+      }
+    }
+  </script>
+  {% endif %}
+
+  <!-- Dashboard Client Script -->
+  <script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
