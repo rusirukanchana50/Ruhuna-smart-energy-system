@@ -16,7 +16,7 @@ A centralized, real-time three-phase electrical energy monitoring, anomaly detec
 The primary objective of this project is to develop and demonstrate a centralized Smart Energy Monitoring and Analytics platform to supervise electrical consumption, power quality, and operational costs across the academic and administrative complexes of the Faculty of Engineering, University of Ruhuna.
 
 ### Specific Engineering Objectives:
-1. **Real-Time Telemetry Supervision**: Monitor balanced three-phase electrical parameters ($400\text{ V Line-to-Line}$, $50.0\text{ Hz}$) across six core campus complexes initialized by default, with dynamic administrator support for adding further facilities and continuous 5-second dashboard updates.
+1. **Real-Time Telemetry Supervision**: Monitor balanced three-phase electrical parameters ($400\text{ V Line-to-Line}$, $50.0\text{ Hz}$). Six original campus buildings are created automatically when the database is initialized, and administrators can dynamically register additional buildings (so the total is not fixed at six), supported by continuous 5-second dashboard updates.
 2. **Accurate Electrical Power Modeling**: Implement three-phase AC power triangle calculations ($S = \sqrt{3} V_L I_L$, $P = S \times \text{PF}$, $Q = \sqrt{S^2 - P^2}$) and discrete trapezoidal energy integration with missing sensor data credit protection.
 3. **Automated Anomaly & Safety Alerting**: Maintain a state-machine tracking engine for 8 critical electrical abnormal conditions (Low Power Factor, Undervoltage, Overvoltage, Frequency Excursions, Feeder High Load, Feeder Overload, and Sensor Offline).
 4. **Energy Cost & Institutional Tariff Analysis**: Model electricity expenditures using a configurable two-part industrial/commercial tariff (energy charge, peak demand charge, and fixed monthly charge) with automated after-hours energy tracking (08:00–17:00 weekdays).
@@ -139,7 +139,7 @@ The codebase is structured into modular layers for separation of concerns while 
 5. **Initialize the SQLite Database**:
    - The application uses an embedded SQLite database (`energy.db`) configured with Write-Ahead Logging (`WAL`).
    - The database file and all core tables initialize automatically when `app.py`, `create_user.py`, or `simulator.py` is first executed.
-   - The system automatically provisions **six core campus buildings** by default (`CEE`, `EIE`, `MME`, `MENA`, `ADMIN`, `AUDI`), demonstration tariffs, and operating schedules. Administrators can add more campus buildings dynamically at any time using the **Manage Buildings** portal in the web interface or via `POST /api/buildings`.
+   - **Initial Buildings & Dynamic Growth**: Six original campus buildings (`CEE`, `EIE`, `MME`, `MENA`, `ADMIN`, `AUDI`) are created automatically when the database is initialized. Administrators can add additional buildings dynamically at any time using the **Manage Buildings** portal in the web interface or via `POST /api/buildings`, so the total number of monitored facilities is not fixed at six.
    - You can also explicitly initialize the database schema at any time with:
      ```bash
      python -c "import database; database.init_db(); print('Database schema and core faculty buildings initialized.')"
@@ -158,29 +158,23 @@ The codebase is structured into modular layers for separation of concerns while 
 
 ## 👤 5. How to Create Demonstration Accounts Securely
 
-User accounts can be created either interactively or non-interactively using the secure `create_user.py` utility. Passwords are typed securely with hidden input (never echoing to the terminal or command history) and stored with industry-standard cryptographic hashing (`Werkzeug` PBKDF2/scrypt).
+User accounts should be created securely using the interactive `create_user.py` provisioning script. Passwords are typed interactively with hidden/masked input (never echoed to the terminal or recorded in shell histories) and stored with industry-standard cryptographic hashing (`Werkzeug` PBKDF2/scrypt).
 
-### Recommended: Interactive Provisioning (Masked Password Input)
+### Interactive Account Creation
+Run the interactive script in your terminal:
 ```bash
 python create_user.py
 ```
-Follow the interactive prompts to provision an account:
+Follow the interactive prompts to create your own account:
 1. **Full Name**: Enter display name (e.g., `Faculty Administrator` or `Student Viewer`).
 2. **University Email**: Enter institutional login email (e.g., `admin@eng.ruh.ac.lk`).
-3. **Role Selection**: Select `1` for **Administrator** (full CRUD access, dynamic building creation, alert acknowledgment) or `2` for **Viewer** (read-only telemetry and reporting).
-4. **Password**: Enter your chosen strong password (input is masked using Python's standard `getpass` module for shoulder-surfing defense).
+3. **Role Selection**: Select `1` for **Administrator** (full management, dynamic building creation, alert acknowledgment) or `2` for **Viewer** (read-only telemetry and reporting).
+4. **Password**: Type your chosen secure password interactively. Input is masked using Python's standard `getpass` module to protect against shoulder-surfing.
 
-### Non-Interactive (Command-Line) Provisioning:
-For automated scripts or headless container environments, provide your custom credentials:
-```bash
-# Provision a Primary Administrator Account (specify your own strong password):
-python create_user.py --email admin@eng.ruh.ac.lk --name "Faculty Administrator" --role Administrator --password "<CHOOSE_STRONG_PASSWORD>"
-
-# Provision a Read-Only Viewer Account (specify your own strong password):
-python create_user.py --email viewer@eng.ruh.ac.lk --name "Student Viewer" --role Viewer --password "<CHOOSE_STRONG_PASSWORD>"
-```
-
-> **Security Reminder**: The production database `energy.db` is intentionally excluded from Git to prevent leaking telemetry and credential hashes. When testing on a fresh clone, run `python create_user.py` before logging into the web portal for the first time.
+> **Security Notices**:
+> - **No Hardcoded Credentials**: No default passwords or demonstration credentials are pre-installed in the repository. Users must create their own accounts via `python create_user.py`.
+> - **Excluded Database**: The SQLite database file (`energy.db`) is ignored by Git to prevent leaking telemetry and credential hashes.
+> - **Initial Setup**: On a fresh clone, run `python create_user.py` to create your initial Administrator or Viewer account before logging into the portal.
 
 ---
 
@@ -246,7 +240,7 @@ Follow this verified sequence during viva evaluations:
 | Step | Page / Action | Demonstration Focus |
 |---|---|---|
 | **1** | `/login` | Show dark-themed faculty crest, form validation, show/hide password toggle, and RBAC authentication. |
-| **2** | `/dashboard` | View active building substation cards (6 initialized core facilities plus any dynamically registered buildings), 5-second real-time polling, and sliding-window Chart.js graphs. For Administrators, demonstrate the **Manage Buildings** modal to add new facilities dynamically. Point out the `SIMULATED DATA` disclaimer badge. |
+| **2** | `/dashboard` | View active building substation cards (six original campus complexes created automatically at database initialization, plus any additional facilities added dynamically by administrators; total is not fixed at six). Observe 5-second real-time polling and sliding-window Chart.js graphs. For Administrators, demonstrate the **Manage Buildings** modal to add new facilities dynamically. Point out the `SIMULATED DATA` disclaimer badge. |
 | **3** | `/analytics` | Filter historical telemetry by department (e.g. `CEE`), test presets (`1h`, `today`, `24h`, `7d`), and explain **Load Factor** ($\text{LF} = P_{\text{avg}} / P_{\text{peak}}$). Show the campus-wide comparative graphs. |
 | **4** | `/alerts` | Observe active electrical threshold violations. Switch to Terminal 2, inject an anomaly (`--anomaly LOW_PF`), and watch the alert banner appear live. Demonstrate **Administrator Acknowledgment**. |
 | **5** | `/cost-efficiency` | Explain the two-part demonstration institutional tariff (Energy + Peak Demand + Fixed), after-hours consumption detection (08:00–17:00 weekdays), and departmental efficiency rankings. |
