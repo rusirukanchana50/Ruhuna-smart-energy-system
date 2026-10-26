@@ -18,6 +18,14 @@ import sys
 import tempfile
 import shutil
 import sqlite3
+
+# Ensure project root and backend are in sys.path
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+BACKEND_DIR = os.path.join(PROJECT_ROOT, "backend")
+for p in (PROJECT_ROOT, BACKEND_DIR):
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
 import database
 from app import app, get_or_create_secret_key
 
@@ -56,7 +64,7 @@ def run_tests():
             assert key != "ruhuna-smart-energy-secret-key-3f8a9e2d1c", "Hardcoded fallback must not be used."
 
             # Verify .secret_key is in .gitignore
-            gitignore_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".gitignore")
+            gitignore_path = os.path.join(PROJECT_ROOT, ".gitignore")
             assert os.path.exists(gitignore_path), ".gitignore file must exist."
             with open(gitignore_path, "r", encoding="utf-8") as f:
                 content = f.read()

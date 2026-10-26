@@ -18,10 +18,12 @@ import tempfile
 import sqlite3
 from datetime import datetime, timedelta
 
-# Ensure Ruhuna Smart Energy System directory is in path
-CURRENT_DIR = os.path.dirname(os.path.abspath(__file__))
-if CURRENT_DIR not in sys.path:
-    sys.path.insert(0, CURRENT_DIR)
+# Ensure Ruhuna Smart Energy System directory and backend are in path
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+BACKEND_DIR = os.path.join(PROJECT_ROOT, "backend")
+for p in (PROJECT_ROOT, BACKEND_DIR):
+    if p not in sys.path:
+        sys.path.insert(0, p)
 
 import database
 from app import app

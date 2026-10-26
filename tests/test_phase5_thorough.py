@@ -30,6 +30,14 @@ import tempfile
 import sqlite3
 import json
 from datetime import datetime
+
+# Ensure project root and backend are in sys.path
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+BACKEND_DIR = os.path.join(PROJECT_ROOT, "backend")
+for p in (PROJECT_ROOT, BACKEND_DIR):
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
 import database
 from app import app
 
@@ -565,7 +573,7 @@ def test_sqlite_telemetry_integrity():
     print("=" * 75)
 
     # 8.1 Verify analytics.js contains NO Math.random() calls
-    js_path = os.path.join(os.path.dirname(__file__), "static", "js", "analytics.js")
+    js_path = os.path.join(PROJECT_ROOT, "frontend", "static", "js", "analytics.js")
     with open(js_path, "r", encoding="utf-8") as f:
         js_code = f.read()
 

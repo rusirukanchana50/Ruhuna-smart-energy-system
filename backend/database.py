@@ -13,8 +13,11 @@ from datetime import datetime
 # Define the database filename
 DB_NAME = "energy.db"
 
-# Path to the database file (in the same folder as this script)
-DB_PATH = os.path.join(os.path.dirname(__file__), DB_NAME)
+# Project root directory (one level up from backend/)
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+
+# Path to the database file (anchored to project root)
+DB_PATH = os.environ.get("ENERGY_DB_PATH", os.path.join(PROJECT_ROOT, DB_NAME))
 
 
 def get_db_connection():

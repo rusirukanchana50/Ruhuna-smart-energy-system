@@ -14,16 +14,25 @@ __pycache__/
 # SQLite Databases & Backups (Preserves local telemetry records and secrets from public exposure)
 energy.db
 *.db
+**/*.db
 *.db-wal
+**/*.db-wal
 *.db-shm
+**/*.db-shm
 *.sqlite3
+**/*.sqlite3
 *.sqlite
+**/*.sqlite
 *.backup
 *.backup*
+**/*.backup
+**/*.backup*
 *.task4_backup
 *.final_demo_backup
 *.bak
+**/*.bak
 backups/
+**/backups/
 
 # Runtime and Application Data
 instance/
