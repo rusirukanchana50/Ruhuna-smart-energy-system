@@ -4,7 +4,7 @@
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
 [![Flask 3.0+](https://img.shields.io/badge/Flask-3.0%2B-green.svg)](https://flask.palletsprojects.com/)
 [![SQLite 3](https://img.shields.io/badge/Database-SQLite%20WAL-orange.svg)](https://www.sqlite.org/)
-[![Tests Passing](https://img.shields.io/badge/Tests-129%2F129%20Passed-brightgreen.svg)](run_all_tests.py)
+[![Tests Passing](https://img.shields.io/badge/Tests-159%2F159%20Passed-brightgreen.svg)](run_all_tests.py)
 [![Academic License](https://img.shields.io/badge/License-Academic%20Project-purple.svg)]()
 
 A centralized, real-time three-phase electrical energy monitoring, anomaly detection, and analytics web portal developed for the **Faculty of Engineering, University of Ruhuna** (Hapugala, Galle, Sri Lanka).
@@ -90,6 +90,14 @@ The system utilizes a multi-tier, decoupled architecture designed for concurrent
   |  - /reports/printable: Official University PDF Print Document           |
   +-------------------------------------------------------------------------+
 ```
+
+### Modular Repository Organization
+The codebase is structured into modular layers for separation of concerns while preserving root-level execution compatibility:
+- **`backend/`**: Core Flask routes, database schema/queries, telemetry simulator, and provisioning tools.
+- **`frontend/`**: HTML Jinja2 templates (`frontend/templates/`) and client assets (`frontend/static/css/`, `frontend/static/js/`).
+- **`tests/`**: Master test runner and automated test suites for Phases 1 through 15.
+- **`docs/`**: Academic project report, viva speaking notes, architecture, database schemas, and formulas.
+- **Project Root**: Thin backward-compatible entry points (`python app.py`, `python simulator.py`, `python run_all_tests.py`), `.gitignore`, and `requirements.txt`.
 
 ---
 
@@ -239,7 +247,7 @@ Follow this verified sequence during viva evaluations:
 | **6** | `/reports` | Generate a 16-parameter summary audit report, download the timestamped raw telemetry CSV export, and open the `/reports/printable` official PDF print view. |
 | **7** | `/logout` | Log out and verify that unauthorized requests back to `/dashboard` or `/api/energy/live` are blocked with HTTP 302 / 401. |
 
-For detailed speaking notes and examiner Q&A answers, refer to [DEMO_MODE.md](DEMO_MODE.md).
+For detailed speaking notes and examiner Q&A answers, refer to [DEMO_MODE.md](docs/DEMO_MODE.md) and [VIVA_NOTES.md](docs/VIVA_NOTES.md).
 
 ---
 
@@ -290,20 +298,25 @@ python run_all_tests.py
 =====================================================================================
  #   | Test Script              | Status   | Checks   | Time     | Description
 -------------------------------------------------------------------------------------
- 1   | test_app.py              | [PASS]   | 5/5      | 0.57s    | Phase 1: Database & Buildings REST API
- 2   | test_phase2.py           | [PASS]   | 8/8      | 0.63s    | Phase 2: Authentication, RBAC & Session Protection
- 3   | test_phase3.py           | [PASS]   | 4/4      | 1.78s    | Phase 3: Three-Phase Simulator & Electrical Math
- 4   | test_phase4.py           | [PASS]   | 3/3      | 1.17s    | Phase 4: Live Telemetry Dashboard & Polling
- 5   | test_phase5.py           | [PASS]   | 5/5      | 0.94s    | Phase 5: Historical Analytics & Load Factor
- 6   | test_phase5_thorough.py  | [PASS]   | 70/70    | 1.96s    | Phase 5 Thorough: Mathematical Ground-Truth & Edge Cases
- 7   | test_phase6.py           | [PASS]   | 7/7      | 1.31s    | Phase 6: Electrical Alerts & Anomaly Detection
- 8   | test_phase7.py           | [PASS]   | 7/7      | 1.14s    | Phase 7: Cost Calculation & Efficiency Analysis
- 9   | test_phase8.py           | [PASS]   | 4/4      | 1.33s    | Phase 8: Comprehensive Reports, CSV Export & RBAC
- 10  | test_workflow_e2e.py     | [PASS]   | 10/10    | 1.27s    | Phase 10: End-to-End Workflow (Login->Reports->Logout)
- 11  | verify_phase9.py         | [PASS]   | 6/6      | 0.42s    | Phase 9: Comprehensive System Integration Verification
+ 1   | test_app.py              | [PASS]   | 5/5      | 0.45s    | Phase 1: Database & Buildings REST API
+ 2   | test_phase2.py           | [PASS]   | 8/8      | 0.57s    | Phase 2: Authentication, RBAC & Session Protection
+ 3   | test_phase3.py           | [PASS]   | 4/4      | 0.85s    | Phase 3: Three-Phase Simulator & Electrical Math
+ 4   | test_phase4.py           | [PASS]   | 3/3      | 1.03s    | Phase 4: Live Telemetry Dashboard & Polling
+ 5   | test_phase5.py           | [PASS]   | 5/5      | 1.07s    | Phase 5: Historical Analytics & Load Factor
+ 6   | test_phase5_thorough.py  | [PASS]   | 70/70    | 2.06s    | Phase 5 Thorough: Mathematical Ground-Truth & Edge Cases
+ 7   | test_phase6.py           | [PASS]   | 7/7      | 1.43s    | Phase 6: Electrical Alerts & Anomaly Detection
+ 8   | test_phase7.py           | [PASS]   | 7/7      | 1.61s    | Phase 7: Cost Calculation & Efficiency Analysis
+ 9   | test_phase8.py           | [PASS]   | 4/4      | 1.61s    | Phase 8: Comprehensive Reports, CSV Export & RBAC
+ 10  | test_workflow_e2e.py     | [PASS]   | 10/10    | 2.38s    | Phase 10: End-to-End Workflow (Login->Reports->Logout)
+ 11  | verify_phase9.py         | [PASS]   | 6/6      | 0.43s    | Phase 9: Comprehensive System Integration Verification
+ 12  | test_building_deletion.py | [PASS]   | 4/4      | 0.81s    | Phase 11: Foreign Key Safety & Safe Building Deletion
+ 13  | test_validation.py       | [PASS]   | 4/4      | 0.73s    | Phase 12: Input Validation, Error Handling & Uniqueness
+ 14  | test_csrf_security.py    | [PASS]   | 5/5      | 0.60s    | Phase 13: CSRF Defense & Secret Key Security
+ 15  | test_building_simulated_deletion.py | [PASS]   | 8/8      | 1.15s    | Phase 14: Safe Admin Building & Simulated Data Deletion
+ 16  | test_building_lifecycle_simulation.py | [PASS]   | 9/9      | 1.35s    | Phase 15: Building Re-creation & Dynamic Simulator Telemetry
 =====================================================================================
- Total Test Suites   : 11 (11 Passed, 0 Failed)
- Total Checks/Tests  : 129 Passed, 0 Failed (100% Success Rate)
+ Total Test Suites   : 16 (16 Passed, 0 Failed)
+ Total Checks/Tests  : 159 Passed, 0 Failed (100% Success Rate)
 =====================================================================================
 ```
 
@@ -317,7 +330,7 @@ python run_all_tests.py
 4. **Demonstration Tariff**: The two-part cost calculation is an engineering demonstration model and does not represent the official bulk electricity billing from the Ceylon Electricity Board (CEB).
 5. **No Autonomous Load Control**: The system performs supervisory monitoring and anomaly alerting but does not autonomously trip circuit breakers or shed electrical loads.
 
-For details on the engineering roadmap (Modbus/RS485 gateways, solar PV integration, harmonics/THD, and predictive forecasting), refer to [LIMITATIONS_AND_FUTURE_WORK.md](LIMITATIONS_AND_FUTURE_WORK.md).
+For details on the engineering roadmap (Modbus/RS485 gateways, solar PV integration, harmonics/THD, and predictive forecasting), refer to [LIMITATIONS_AND_FUTURE_WORK.md](docs/LIMITATIONS_AND_FUTURE_WORK.md) and [EE4207_FINAL_PROJECT_REPORT.md](docs/EE4207_FINAL_PROJECT_REPORT.md).
 
 ---
 

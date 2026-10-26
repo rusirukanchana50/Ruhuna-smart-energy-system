@@ -15,7 +15,16 @@ Validates the full user journey:
   9. Post-logout security lock verification
 """
 
+import os
+import sys
 import unittest
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+BACKEND_DIR = os.path.join(PROJECT_ROOT, "backend")
+for p in (PROJECT_ROOT, BACKEND_DIR):
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
 from app import app
 from database import init_db, get_user_by_email, create_user, get_all_buildings
 

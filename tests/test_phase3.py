@@ -9,7 +9,16 @@ Automated test suite for Phase 3:
 5. Verifies authenticated API results, JSON schemas, and SIMULATED labels.
 """
 
+import os
+import sys
 import math
+
+PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+BACKEND_DIR = os.path.join(PROJECT_ROOT, "backend")
+for p in (PROJECT_ROOT, BACKEND_DIR):
+    if p not in sys.path:
+        sys.path.insert(0, p)
+
 from app import app
 from simulator import calculate_electrical_parameters, calculate_cumulative_energy, run_simulation_cycle
 from database import get_all_buildings, get_live_energy_readings, get_building_energy_history

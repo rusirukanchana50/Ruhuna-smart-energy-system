@@ -13,7 +13,9 @@ for path in (PROJECT_ROOT, BACKEND_DIR):
     if path not in sys.path:
         sys.path.insert(0, path)
 
-from backend.create_user import main
+import backend.create_user
+
+sys.modules[__name__] = backend.create_user
 
 if __name__ == "__main__":
-    main()
+    backend.create_user.main()

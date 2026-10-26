@@ -13,7 +13,9 @@ for path in (PROJECT_ROOT, BACKEND_DIR):
     if path not in sys.path:
         sys.path.insert(0, path)
 
-from backend.configure_system import main
+import backend.configure_system
+
+sys.modules[__name__] = backend.configure_system
 
 if __name__ == "__main__":
-    main()
+    backend.configure_system.main()

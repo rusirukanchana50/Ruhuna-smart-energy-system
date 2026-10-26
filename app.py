@@ -7,14 +7,16 @@ Dispatches directly to backend/app.py.
 import os
 import sys
 
-# Ensure root directory and backend directory are in sys.path
 PROJECT_ROOT = os.path.dirname(os.path.abspath(__file__))
 BACKEND_DIR = os.path.join(PROJECT_ROOT, "backend")
 for path in (PROJECT_ROOT, BACKEND_DIR):
     if path not in sys.path:
         sys.path.insert(0, path)
 
-from backend.app import *
+import backend.app
+
+# Alias in sys.modules so 'app' and 'backend.app' share the exact same instance
+sys.modules[__name__] = backend.app
 
 if __name__ == "__main__":
-    app.run(debug=True, host="127.0.0.1", port=5000)
+    backend.app.app.run(debug=True, host="127.0.0.1", port=5000)

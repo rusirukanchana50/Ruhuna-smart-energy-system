@@ -13,17 +13,20 @@
 
   <!-- Top Navigation Header -->
   <header class="navbar">
-    <a href="{{ url_for('dashboard') }}" class="brand-link">
-      <div class="brand-crest">
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10"></circle>
-          <path d="M12 2a14.5 14.5 0 0 0 0 20 14.5 14.5 0 0 0 0-20"></path>
-          <path d="M2 12h20"></path>
-        </svg>
-      </div>
-      <div class="brand-text">
-        <span class="brand-title">Faculty of Engineering</span>
-        <span class="brand-sub">University of Ruhuna &bull; Smart Energy System</span>
+    <a href="{{ url_for('dashboard') }}" class="nav-brand">
+      <!-- Ruhuna Energy Lightning Crest -->
+      <svg class="nav-brand-logo" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <polygon points="13 2 4 14 11 14 11 22 20 10 13 10 13 2" fill="url(#boltNavGradCost)" stroke="#38bdf8" stroke-width="1.5" />
+        <defs>
+          <linearGradient id="boltNavGradCost" x1="4" y1="2" x2="20" y2="22" gradientUnits="userSpaceOnUse">
+            <stop stop-color="#38bdf8" />
+            <stop offset="1" stop-color="#f59e0b" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div>
+        <span class="nav-brand-title">Ruhuna Smart Energy</span>
+        <span class="nav-brand-sub">Faculty of Engineering &bull; University of Ruhuna</span>
       </div>
     </a>
 
@@ -50,6 +53,7 @@
           <line x1="12" y1="17" x2="12.01" y2="17"></line>
         </svg>
         Electrical Alerts
+        <span id="navAlertBadge" class="nav-alert-counter" style="display: none;">0</span>
       </a>
       <a href="{{ url_for('cost_efficiency_page') }}" class="nav-link active">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -86,7 +90,8 @@
 
       <!-- Logout Form Button -->
       <form action="{{ url_for('logout') }}" method="POST" style="margin: 0;">
-        <button type="submit" class="btn-logout" title="Sign out of the system">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button type="submit" class="btn btn-logout" title="Sign out of the system">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
             <polyline points="16 17 21 12 16 7"></polyline>
@@ -99,7 +104,7 @@
   </header>
 
   <!-- Main Content Container -->
-  <main class="dashboard-container">
+  <main class="dashboard-main dashboard-container">
     
     <!-- Hero / Title Section -->
     <section class="dashboard-hero" style="margin-bottom: 1.5rem;">

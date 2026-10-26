@@ -13,7 +13,9 @@ for path in (PROJECT_ROOT, BACKEND_DIR):
     if path not in sys.path:
         sys.path.insert(0, path)
 
-from backend.simulator import main
+import backend.simulator
+
+sys.modules[__name__] = backend.simulator
 
 if __name__ == "__main__":
-    main()
+    backend.simulator.main()

@@ -9,55 +9,82 @@ This document details the architectural layout, directory organization, and spec
 
 ```text
 Ruhuna Smart Energy System/
-├── app.py                      # Main Flask application, routing & protected REST API endpoints
-├── database.py                 # SQLite schema, data models, calculations & DB operations
-├── simulator.py                # Three-phase electrical telemetry simulator (400V/50Hz)
-├── create_user.py              # CLI user provisioning tool (Administrator & Viewer)
-├── configure_system.py         # CLI configuration utility (rated power, hours, tariffs)
-├── requirements.txt            # Python runtime dependencies
-├── energy.db                   # SQLite database file storing telemetry, users, tariffs & alerts
-├── .env.example                # Environment variables configuration template
+├── backend/                    # Core Python application logic & database operations
+│   ├── __init__.py             # Backend package marker
+│   ├── app.py                  # Main Flask application, routing & protected REST API endpoints
+│   ├── database.py             # SQLite schema, data models, calculations & DB operations
+│   ├── simulator.py            # Three-phase electrical telemetry simulator (400V/50Hz)
+│   ├── create_user.py          # CLI user provisioning tool (Administrator & Viewer)
+│   └── configure_system.py     # CLI configuration utility (rated power, hours, tariffs)
 │
-├── static/                     # Frontend static assets
-│   ├── css/
-│   │   └── style.css           # Premium dark theme stylesheet, responsive layout & print rules
-│   └── js/
-│       ├── auth.js             # Client-side form validation & password visibility toggle
-│       ├── dashboard.js        # Real-time 5s polling, KPI aggregation & Chart.js live charts
-│       ├── analytics.js        # Historical analytics controller, presets & comparative charts
-│       ├── alerts.js           # Real-time electrical anomaly tracker & RBAC acknowledgment
-│       ├── cost_efficiency.js  # Two-part tariff cost calculator, ranking cards & bar charts
-│       └── reports.js          # 16-parameter audit reports, CSV streaming & tariff update modal
+├── frontend/                   # User interface templates and static assets
+│   ├── static/
+│   │   ├── css/
+│   │   │   └── style.css       # Premium dark theme stylesheet, responsive layout & print rules
+│   │   └── js/
+│   │       ├── auth.js         # Client-side form validation & password visibility toggle
+│   │       ├── dashboard.js    # Real-time 5s polling, KPI aggregation & Chart.js live charts
+│   │       ├── analytics.js    # Historical analytics controller, presets & comparative charts
+│   │       ├── alerts.js       # Real-time electrical anomaly tracker & RBAC acknowledgment
+│   │       ├── cost_efficiency.js # Two-part tariff cost calculator, ranking cards & bar charts
+│   │       └── reports.js      # 16-parameter audit reports, CSV streaming & tariff update modal
+│   └── templates/              # Jinja2 HTML templates
+│       ├── login.html          # University branded authentication portal
+│       ├── dashboard.html      # Substation live monitoring overview with building cards
+│       ├── analytics.html      # Historical electrical analytics & departmental comparison
+│       ├── alerts.html         # Safety threshold violations portal & event log table
+│       ├── cost_efficiency.html # Energy Cost & Departmental Efficiency portal
+│       ├── reports.html        # Audit reporting center with CSV & printable PDF triggers
+│       └── printable_report.html # Official university-branded printable audit report
 │
-├── templates/                  # Jinja2 HTML templates
-│   ├── login.html              # University branded authentication portal
-│   ├── dashboard.html          # Substation live monitoring overview with 6 building cards
-│   ├── analytics.html          # Historical electrical analytics & departmental comparison
-│   ├── alerts.html             # Safety threshold violations portal & event log table
-│   ├── cost_efficiency.html    # Energy Cost & Departmental Efficiency portal
-│   ├── reports.html            # Audit reporting center with CSV & printable PDF triggers
-│   └── printable_report.html   # Official university-branded printable audit report
+├── tests/                      # Automated test scripts & verification suites
+│   ├── __init__.py             # Tests package marker with path resolution
+│   ├── conftest.py             # Pytest configuration and sys.path setup
+│   ├── run_all_tests.py        # Master automated test runner (16 test suites, 159 checks)
+│   ├── test_app.py             # Phase 1: Database connection & Buildings API test
+│   ├── test_phase2.py          # Phase 2: Authentication, RBAC & Session security test
+│   ├── test_phase3.py          # Phase 3: Three-phase electrical calculations & missing data test
+│   ├── test_phase4.py          # Phase 4: Live dashboard DOM, polling & schema test
+│   ├── test_phase5.py          # Phase 5: Historical analytics & Load Factor test
+│   ├── test_phase5_thorough.py # Phase 5: 70-check mathematical ground-truth validation
+│   ├── test_phase6.py          # Phase 6: Electrical anomaly detection & alert life cycle test
+│   ├── test_phase7.py          # Phase 7: Two-part tariff cost calculations & efficiency test
+│   ├── test_phase8.py          # Phase 8: Comprehensive audit reports, CSV export & RBAC test
+│   ├── test_workflow_e2e.py    # Phase 10: Complete end-to-end user journey workflow test
+│   ├── verify_phase9.py        # Phase 9: Multi-phase system integration verification
+│   ├── test_building_deletion.py # Phase 11: Foreign key safety & safe building deletion
+│   ├── test_validation.py      # Phase 12: Input validation, error handling & uniqueness
+│   ├── test_csrf_security.py   # Phase 13: CSRF defense & secret key security
+│   ├── test_building_simulated_deletion.py # Phase 14: Safe admin building & simulated data deletion
+│   ├── test_building_lifecycle_simulation.py # Phase 15: Building re-creation & dynamic simulator telemetry
+│   ├── test_campus_energy_reports_fix.py # Synchronized campus peak & load factor fix verification
+│   ├── test_report_views_consistency.py # View consistency & CSV format verification
+│   └── verify_simulator_dynamic_lifecycle.py # Dynamic lifecycle verification suite
 │
-├── run_all_tests.py            # Master automated test runner executing all 11 test suites
-├── test_workflow_e2e.py        # Phase 10: Complete end-to-end user journey workflow test
-├── test_app.py                 # Phase 1: Database connection & Buildings API test
-├── test_phase2.py              # Phase 2: Authentication, RBAC & Session security test
-├── test_phase3.py              # Phase 3: Three-phase electrical calculations & missing data test
-├── test_phase4.py              # Phase 4: Live dashboard DOM, polling & schema test
-├── test_phase5.py              # Phase 5: Historical analytics & Load Factor test
-├── test_phase5_thorough.py     # Phase 5: 70-check mathematical ground-truth validation
-├── test_phase6.py              # Phase 6: Electrical anomaly detection & alert life cycle test
-├── test_phase7.py              # Phase 7: Two-part tariff cost calculations & efficiency test
-├── test_phase8.py              # Phase 8: Comprehensive audit reports, CSV export & RBAC test
-├── verify_phase9.py            # Phase 9: Multi-phase system integration verification
+├── docs/                       # Technical specifications, reports & viva notes
+│   ├── EE4207_FINAL_PROJECT_REPORT.md # Comprehensive final project academic report
+│   ├── VIVA_NOTES.md           # Comprehensive viva examination speaking notes and Q&A
+│   ├── SYSTEM_ARCHITECTURE.md  # Multi-tier architectural specifications
+│   ├── DATABASE_SCHEMA.md      # SQLite schema, table structures & B-tree indexes
+│   ├── FORMULAS.md             # Mathematical derivations for electrical and cost calculations
+│   ├── PROJECT_STRUCTURE.md    # Detailed catalog of all project files and directories (this file)
+│   ├── DEMO_MODE.md            # Step-by-step viva presentation guide
+│   ├── DEMO_CHECKLIST.md       # Pre-flight demo checklist and troubleshooting notes
+│   └── LIMITATIONS_AND_FUTURE_WORK.md # Future physical deployment roadmap
 │
-├── README.md                   # Primary project documentation, setup & viva guide
-├── DEMO_MODE.md                # Step-by-step viva presentation guide
-├── PROJECT_STRUCTURE.md        # Comprehensive file and folder catalog (this file)
-├── FORMULAS.md                 # Mathematical formulations for all electrical & cost metrics
-├── LIMITATIONS_AND_FUTURE_WORK.md # Prototype boundaries & engineering expansion roadmap
-├── DATABASE_SCHEMA.md          # SQLite database schema, table definitions & index documentation
-├── DEMO_CHECKLIST.md           # Quick reference checklist for demonstrations
+├── Root Entry Points & Config:
+│   ├── app.py                  # Root entry wrapper for Flask web server (`python app.py`)
+│   ├── simulator.py            # Root entry wrapper for Telemetry Simulator (`python simulator.py`)
+│   ├── create_user.py          # Root entry wrapper for User Provisioning (`python create_user.py`)
+│   ├── configure_system.py     # Root entry wrapper for System Configuration (`python configure_system.py`)
+│   ├── run_all_tests.py        # Root entry wrapper for Master Test Runner (`python run_all_tests.py`)
+│   ├── requirements.txt        # Python runtime dependencies
+│   ├── .gitignore              # Multi-tier exclusion for databases, secrets, and backups
+│   ├── .env.example            # Environment variables configuration template
+│   ├── README.md               # Primary project documentation and quickstart guide
+│   ├── energy.db               # Local SQLite database (untracked, excluded by .gitignore)
+│   ├── .secret_key             # Local cryptographic session signing key (untracked)
+│   └── backups/                # Verified point-in-time database snapshots (untracked)
 ├── SYSTEM_ARCHITECTURE.md      # Multi-tier system architecture diagrams & data flow
 └── VIVA_NOTES.md               # Extensive viva examination preparation questions & answers
 ```
