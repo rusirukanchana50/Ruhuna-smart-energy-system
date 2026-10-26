@@ -16,7 +16,7 @@ A centralized, real-time three-phase electrical energy monitoring, anomaly detec
 The primary objective of this project is to develop and demonstrate a centralized Smart Energy Monitoring and Analytics platform to supervise electrical consumption, power quality, and operational costs across the academic and administrative complexes of the Faculty of Engineering, University of Ruhuna.
 
 ### Specific Engineering Objectives:
-1. **Real-Time Telemetry Supervision**: Monitor balanced three-phase electrical parameters ($400\text{ V Line-to-Line}$, $50.0\text{ Hz}$) for 6 major campus complexes with continuous 5-second dashboard updates.
+1. **Real-Time Telemetry Supervision**: Monitor balanced three-phase electrical parameters ($400\text{ V Line-to-Line}$, $50.0\text{ Hz}$) across six core campus complexes initialized by default, with dynamic administrator support for adding further facilities and continuous 5-second dashboard updates.
 2. **Accurate Electrical Power Modeling**: Implement three-phase AC power triangle calculations ($S = \sqrt{3} V_L I_L$, $P = S \times \text{PF}$, $Q = \sqrt{S^2 - P^2}$) and discrete trapezoidal energy integration with missing sensor data credit protection.
 3. **Automated Anomaly & Safety Alerting**: Maintain a state-machine tracking engine for 8 critical electrical abnormal conditions (Low Power Factor, Undervoltage, Overvoltage, Frequency Excursions, Feeder High Load, Feeder Overload, and Sensor Offline).
 4. **Energy Cost & Institutional Tariff Analysis**: Model electricity expenditures using a configurable two-part industrial/commercial tariff (energy charge, peak demand charge, and fixed monthly charge) with automated after-hours energy tracking (08:00–17:00 weekdays).
@@ -61,7 +61,7 @@ The system utilizes a multi-tier, decoupled architecture designed for concurrent
   +-------------------------------------------------------------------------+
   |                      SQLite Database (energy.db)                        |
   |                       Configured with WAL Mode                          |
-  |  - buildings (6 Faculty Complexes)                                      |
+  |  - buildings (6 Core Campus Complexes + Dynamic Admin Facilities)       |
   |  - users (Administrator / Viewer with hashed credentials)               |
   |  - energy_readings (Timestamped 3-phase records, marked SIMULATED)      |
   |  - alerts (Active / Cleared State-Machine Anomaly Log)                  |
@@ -137,11 +137,12 @@ The codebase is structured into modular layers for separation of concerns while 
    ```
 
 5. **Initialize the SQLite Database**:
-   - The application uses an embedded SQLite database (`energy.db`) with Write-Ahead Logging (`WAL`).
-   - The database file and all required tables (6 campus complex buildings, tariffs, faculty operating schedules) initialize automatically when `app.py`, `create_user.py`, or `simulator.py` is first run.
+   - The application uses an embedded SQLite database (`energy.db`) configured with Write-Ahead Logging (`WAL`).
+   - The database file and all core tables initialize automatically when `app.py`, `create_user.py`, or `simulator.py` is first executed.
+   - The system automatically provisions **six core campus buildings** by default (`CEE`, `EIE`, `MME`, `MENA`, `ADMIN`, `AUDI`), demonstration tariffs, and operating schedules. Administrators can add more campus buildings dynamically at any time using the **Manage Buildings** portal in the web interface or via `POST /api/buildings`.
    - You can also explicitly initialize the database schema at any time with:
      ```bash
-     python -c "import database; database.init_db(); print('Database schema and faculty buildings initialized.')"
+     python -c "import database; database.init_db(); print('Database schema and core faculty buildings initialized.')"
      ```
 
 6. **(Optional) Configure Environment Variables**:
@@ -157,24 +158,29 @@ The codebase is structured into modular layers for separation of concerns while 
 
 ## 👤 5. How to Create Demonstration Accounts Securely
 
-User accounts can be created either interactively or non-interactively using the secure `create_user.py` utility. Passwords are masked using Python's standard `getpass` module and stored securely with Werkzeug PBKDF2 cryptographic hashing.
+User accounts can be created either interactively or non-interactively using the secure `create_user.py` utility. Passwords are typed securely with hidden input (never echoing to the terminal or command history) and stored with industry-standard cryptographic hashing (`Werkzeug` PBKDF2/scrypt).
 
-### Interactive Mode:
+### Recommended: Interactive Provisioning (Masked Password Input)
 ```bash
 python create_user.py
 ```
-Follow the on-screen prompts to enter Full Name, University Email, Role (`1` for Administrator, `2` for Viewer), and Password (masked).
+Follow the interactive prompts to provision an account:
+1. **Full Name**: Enter display name (e.g., `Faculty Administrator` or `Student Viewer`).
+2. **University Email**: Enter institutional login email (e.g., `admin@eng.ruh.ac.lk`).
+3. **Role Selection**: Select `1` for **Administrator** (full CRUD access, dynamic building creation, alert acknowledgment) or `2` for **Viewer** (read-only telemetry and reporting).
+4. **Password**: Enter your chosen strong password (input is masked using Python's standard `getpass` module for shoulder-surfing defense).
 
-### Non-Interactive (Command-Line) Mode:
+### Non-Interactive (Command-Line) Provisioning:
+For automated scripts or headless container environments, provide your custom credentials:
 ```bash
-# Provision a Primary Administrator Account:
-python create_user.py --email admin@eng.ruh.ac.lk --name "Faculty Administrator" --role Administrator --password "AdminSecretPassword123!"
+# Provision a Primary Administrator Account (specify your own strong password):
+python create_user.py --email admin@eng.ruh.ac.lk --name "Faculty Administrator" --role Administrator --password "<CHOOSE_STRONG_PASSWORD>"
 
-# Provision a Read-Only Viewer Account:
-python create_user.py --email viewer@eng.ruh.ac.lk --name "Student Viewer" --role Viewer --password "ViewerSecretPassword123!"
+# Provision a Read-Only Viewer Account (specify your own strong password):
+python create_user.py --email viewer@eng.ruh.ac.lk --name "Student Viewer" --role Viewer --password "<CHOOSE_STRONG_PASSWORD>"
 ```
 
-> **Note on Fresh Clones**: Since `energy.db` is ignored by Git to prevent exposing telemetry and sensitive data, create your initial Administrator account using `create_user.py` before logging into the web portal for the first time.
+> **Security Reminder**: The production database `energy.db` is intentionally excluded from Git to prevent leaking telemetry and credential hashes. When testing on a fresh clone, run `python create_user.py` before logging into the web portal for the first time.
 
 ---
 
@@ -228,7 +234,7 @@ Supported anomaly injection types:
    http://127.0.0.1:5000
    ```
 3. You will be greeted by the branded **Sign In** screen.
-4. Enter credentials (e.g., `admin@ruh.ac.lk` / `AdminSecretPassword123!`).
+4. Enter your provisioned credentials created via `python create_user.py` (e.g., your administrator or viewer email and chosen secure password).
 5. After authentication, you will be redirected to the **Live Monitor Dashboard**.
 
 ---
@@ -240,8 +246,8 @@ Follow this verified sequence during viva evaluations:
 | Step | Page / Action | Demonstration Focus |
 |---|---|---|
 | **1** | `/login` | Show dark-themed faculty crest, form validation, show/hide password toggle, and RBAC authentication. |
-| **2** | `/dashboard` | View 6 building substation cards, 5-second real-time polling, and sliding-window Chart.js graphs. Point out the `SIMULATED DATA` disclaimer badge. |
-| **3** | `/analytics` | Filter historical telemetry by department (e.g. `CEE`), test presets (`1h`, `today`, `24h`, `7d`), and explain **Load Factor** ($\text{LF} = P_{\text{avg}} / P_{\text{peak}}$). Show the 6-building comparative graphs. |
+| **2** | `/dashboard` | View active building substation cards (6 initialized core facilities plus any dynamically registered buildings), 5-second real-time polling, and sliding-window Chart.js graphs. For Administrators, demonstrate the **Manage Buildings** modal to add new facilities dynamically. Point out the `SIMULATED DATA` disclaimer badge. |
+| **3** | `/analytics` | Filter historical telemetry by department (e.g. `CEE`), test presets (`1h`, `today`, `24h`, `7d`), and explain **Load Factor** ($\text{LF} = P_{\text{avg}} / P_{\text{peak}}$). Show the campus-wide comparative graphs. |
 | **4** | `/alerts` | Observe active electrical threshold violations. Switch to Terminal 2, inject an anomaly (`--anomaly LOW_PF`), and watch the alert banner appear live. Demonstrate **Administrator Acknowledgment**. |
 | **5** | `/cost-efficiency` | Explain the two-part demonstration institutional tariff (Energy + Peak Demand + Fixed), after-hours consumption detection (08:00–17:00 weekdays), and departmental efficiency rankings. |
 | **6** | `/reports` | Generate a 16-parameter summary audit report, download the timestamped raw telemetry CSV export, and open the `/reports/printable` official PDF print view. |
@@ -334,12 +340,31 @@ For details on the engineering roadmap (Modbus/RS485 gateways, solar PV integrat
 
 ---
 
+## 📚 13. Documentation Index & Technical References
+
+All project documentation, viva preparation materials, database schemas, and mathematical derivations are maintained in the [`docs/`](docs/) directory:
+
+| Document | Description | Reference Link |
+| :--- | :--- | :--- |
+| **Project Structure** | Comprehensive breakdown of `backend/`, `frontend/`, `tests/`, and `docs/` | [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md) |
+| **System Architecture** | Multi-tier architecture, dataflow diagrams, and concurrency design | [`docs/SYSTEM_ARCHITECTURE.md`](docs/SYSTEM_ARCHITECTURE.md) |
+| **Database Schema** | Detailed schema, table definitions, foreign keys, and WAL configuration | [`docs/DATABASE_SCHEMA.md`](docs/DATABASE_SCHEMA.md) |
+| **Electrical Formulas** | AC power triangle, line/phase equations, and trapezoidal integration math | [`docs/FORMULAS.md`](docs/FORMULAS.md) |
+| **Viva Examination Notes** | Technical defense talking points, examiner Q&A, and theoretical proofs | [`docs/VIVA_NOTES.md`](docs/VIVA_NOTES.md) |
+| **Demonstration Mode** | Step-by-step viva presentation guide and anomaly injection procedures | [`docs/DEMO_MODE.md`](docs/DEMO_MODE.md) |
+| **Demonstration Checklist** | Pre-demonstration system readiness check, commands, and verify steps | [`docs/DEMO_CHECKLIST.md`](docs/DEMO_CHECKLIST.md) |
+| **Limitations & Future Work** | Hardware gateway roadmap (Modbus/RS485), solar PV, and forecasting | [`docs/LIMITATIONS_AND_FUTURE_WORK.md`](docs/LIMITATIONS_AND_FUTURE_WORK.md) |
+| **Final Project Report** | Complete academic project report and faculty submission document | [`docs/EE4207_FINAL_PROJECT_REPORT.md`](docs/EE4207_FINAL_PROJECT_REPORT.md) |
+
+---
+
 ## 🏛️ Acknowledgments & Faculty
 - **Institution**: Faculty of Engineering, University of Ruhuna, Hapugala, Galle, Sri Lanka.
-- **Departments Monitored**:
+- **Core Initialized Complexes**:
   - Civil and Environmental Engineering (`CEE`)
   - Electrical and Information Engineering (`EIE`)
   - Mechanical and Manufacturing Engineering (`MME`)
   - Marine Engineering and Naval Architecture (`MENA`)
   - Administration Complex (`ADMIN`)
   - Main Auditorium (`AUDI`)
+  *(Additional campus buildings and substations can be registered dynamically by Administrators via the UI)*
