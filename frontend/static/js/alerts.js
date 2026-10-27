@@ -267,7 +267,7 @@ function renderAlertsTable(alerts) {
     } else {
       if (currentRole === "Administrator") {
         ackHtml = `
-          <button type="button" class="btn btn-ack" onclick="acknowledgeAlert(${alert.id})">
+          <button type="button" class="btn btn-ack" onclick="acknowledgeAlert('${alert.id}')">
             Acknowledge
           </button>
         `;

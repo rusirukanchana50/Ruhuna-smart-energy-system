@@ -458,16 +458,16 @@
                 <input type="number" step="0.5" min="0.1" id="bldg-power-input-{{ b['id'] }}" value="{{ b['rated_power_kw'] if 'rated_power_kw' in b.keys() and b['rated_power_kw'] else 50.0 }}" style="display: none; width: 95px; background: var(--bg-input); border: 1px solid var(--border-subtle); color: #fff; padding: 0.35rem 0.6rem; border-radius: 0.4rem; font-family: var(--font-mono); font-size: 0.85rem;">
               </td>
               <td style="padding: 0.75rem 1rem; text-align: right; white-space: nowrap;">
-                <button type="button" id="bldg-edit-btn-{{ b['id'] }}" onclick="toggleEditBuilding({{ b['id'] }})" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 0.4rem; cursor: pointer; transition: all 0.2s;">
+                <button type="button" id="bldg-edit-btn-{{ b['id'] }}" onclick="toggleEditBuilding('{{ b['id'] }}')" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.35); border-radius: 0.4rem; cursor: pointer; transition: all 0.2s;">
                   Edit
                 </button>
-                <button type="button" id="bldg-save-btn-{{ b['id'] }}" onclick="saveBuildingEdit({{ b['id'] }})" style="display: none; padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.45); border-radius: 0.4rem; cursor: pointer;">
+                <button type="button" id="bldg-save-btn-{{ b['id'] }}" onclick="saveBuildingEdit('{{ b['id'] }}')" style="display: none; padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.45); border-radius: 0.4rem; cursor: pointer;">
                   Save
                 </button>
-                <button type="button" id="bldg-cancel-btn-{{ b['id'] }}" onclick="cancelEditBuilding({{ b['id'] }})" style="display: none; padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 0.4rem; cursor: pointer; margin-left: 0.35rem;">
+                <button type="button" id="bldg-cancel-btn-{{ b['id'] }}" onclick="cancelEditBuilding('{{ b['id'] }}')" style="display: none; padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: rgba(148, 163, 184, 0.15); color: #cbd5e1; border: 1px solid rgba(148, 163, 184, 0.3); border-radius: 0.4rem; cursor: pointer; margin-left: 0.35rem;">
                   Cancel
                 </button>
-                <button type="button" onclick="deleteBuilding({{ b['id'] }}, '{{ b['name'] }}')" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 0.4rem; cursor: pointer; margin-left: 0.35rem; transition: all 0.2s;">
+                <button type="button" onclick="deleteBuilding('{{ b['id'] }}', '{{ b['name'] }}')" style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.35); border-radius: 0.4rem; cursor: pointer; margin-left: 0.35rem; transition: all 0.2s;">
                   Delete
                 </button>
                 <button type="button" 
@@ -475,7 +475,7 @@
                         class="bldg-del-sim-btn"
                         data-building-id="{{ b['id'] }}"
                         data-building-code="{{ b['code'] }}"
-                        onclick="openDeleteSimulatedModal({{ b['id'] }}, '{{ b['code'] }}', '{{ b['name'] }}')" 
+                        onclick="openDeleteSimulatedModal('{{ b['id'] }}', '{{ b['code'] }}', '{{ b['name'] }}')" 
                         style="padding: 0.35rem 0.75rem; font-size: 0.78rem; font-weight: 600; background: rgba(220, 38, 38, 0.25); color: #fca5a5; border: 1px solid rgba(239, 68, 68, 0.55); border-radius: 0.4rem; cursor: pointer; margin-left: 0.35rem; transition: all 0.2s;" 
                         title="Delete demonstration facility and all associated simulated telemetry">
                   Delete Building and Simulated Data

@@ -35,7 +35,7 @@ python simulator.py
    - Explain to examiners: Protected routes redirect browsers and return HTTP 401 Unauthorized for API clients.
 4. Log in using the **Viewer** account:
    - Email: `test_viewer@eng.ruh.ac.lk`
-   - Password: `ViewerSecretPassword123!`
+   - Password: `<your-viewer-password>` *(entered interactively during account creation)*
 5. Point out the **Viewer** role badge in the upper navigation bar.
 
 ---
@@ -107,7 +107,7 @@ python simulator.py
    - Show that the alerts update to `Cleared` with recorded `cleared_at` timestamps.
 6. Demonstrate RBAC on Alert Acknowledgment:
    - As `test_viewer`, attempt to acknowledge an alert (the button is disabled or displays "Viewer: Read-Only").
-   - Log out and log in as `test_admin@eng.ruh.ac.lk` / `AdminSecretPassword123!`.
+   - Log out and log in as `test_admin@eng.ruh.ac.lk` / `<your-admin-password>`.
    - Click **Acknowledge**: confirm the alert is stamped with `Admin`, current timestamp, and green checkmark.
 
 ---

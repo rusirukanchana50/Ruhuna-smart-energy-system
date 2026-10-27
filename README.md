@@ -1,13 +1,17 @@
 # University of Ruhuna — Faculty of Engineering
 # Smart Energy Monitoring and Analytics System
 
-[![Python 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)](https://www.python.org/)
-[![Flask 3.0+](https://img.shields.io/badge/Flask-3.0%2B-green.svg)](https://flask.palletsprojects.com/)
-[![SQLite 3](https://img.shields.io/badge/Database-SQLite%20WAL-orange.svg)](https://www.sqlite.org/)
-[![Tests Passing](https://img.shields.io/badge/Tests-159%2F159%20Passed-brightgreen.svg)](run_all_tests.py)
+[![Node.js 18+](https://img.shields.io/badge/Node.js-18%2B-green.svg)](https://nodejs.org/)
+[![Express 4.19+](https://img.shields.io/badge/Express-4.19%2B-lightgrey.svg)](https://expressjs.com/)
+[![MongoDB 3.4+](https://img.shields.io/badge/Database-MongoDB%203.4%2B-green.svg)](https://www.mongodb.com/)
+[![Automated Tests](https://img.shields.io/badge/Node%20Tests-184%2F184%20Passed-brightgreen.svg)](package.json)
+[![Python Baseline](https://img.shields.io/badge/Python%20Baseline-159%2F159%20Passed-blue.svg)](run_all_tests.py)
 [![Academic License](https://img.shields.io/badge/License-Academic%20Project-purple.svg)]()
 
 A centralized, real-time three-phase electrical energy monitoring, anomaly detection, and analytics web portal developed for the **Faculty of Engineering, University of Ruhuna** (Hapugala, Galle, Sri Lanka).
+
+> **System Status (Post-Migration)**:
+> The primary system implementation has been migrated to **Node.js, Express, and MongoDB**, verified through **184/184 automated tests** and **14/14 browser checkpoints**. The original **Python 3 / Flask / SQLite** implementation and database (`energy.db`) are fully preserved side-by-side for reference and backward compatibility.
 
 ---
 
@@ -16,7 +20,7 @@ A centralized, real-time three-phase electrical energy monitoring, anomaly detec
 The primary objective of this project is to develop and demonstrate a centralized Smart Energy Monitoring and Analytics platform to supervise electrical consumption, power quality, and operational costs across the academic and administrative complexes of the Faculty of Engineering, University of Ruhuna.
 
 ### Specific Engineering Objectives:
-1. **Real-Time Telemetry Supervision**: Monitor balanced three-phase electrical parameters ($400\text{ V Line-to-Line}$, $50.0\text{ Hz}$). Six original campus buildings are created automatically when the database is initialized, and administrators can dynamically register additional buildings (so the total is not fixed at six), supported by continuous 5-second dashboard updates.
+1. **Real-Time Telemetry Supervision**: Monitor balanced three-phase electrical parameters ($400\text{ V Line-to-Line}$, $50.0\text{ Hz}$). Six original campus buildings are created automatically when the database is initialized, and administrators can dynamically register additional buildings (the total is not fixed at six), supported by continuous 5-second dashboard updates.
 2. **Accurate Electrical Power Modeling**: Implement three-phase AC power triangle calculations ($S = \sqrt{3} V_L I_L$, $P = S \times \text{PF}$, $Q = \sqrt{S^2 - P^2}$) and discrete trapezoidal energy integration with missing sensor data credit protection.
 3. **Automated Anomaly & Safety Alerting**: Maintain a state-machine tracking engine for 8 critical electrical abnormal conditions (Low Power Factor, Undervoltage, Overvoltage, Frequency Excursions, Feeder High Load, Feeder Overload, and Sensor Offline).
 4. **Energy Cost & Institutional Tariff Analysis**: Model electricity expenditures using a configurable two-part industrial/commercial tariff (energy charge, peak demand charge, and fixed monthly charge) with automated after-hours energy tracking (08:00–17:00 weekdays).
@@ -28,337 +32,326 @@ The primary objective of this project is to develop and demonstrate a centralize
 
 ## 🛠️ 2. Technologies Used
 
-### Backend Stack
-- **Python 3.10+**: Core programming language.
-- **Flask (v3.1+)**: WSGI web application framework and RESTful API router.
-- **Werkzeug (v3.1+)**: Secure password hashing via PBKDF2/scrypt (`generate_password_hash`, `check_password_hash`) and cryptographic utilities.
-- **Flask-CORS (v6.0+)**: Cross-Origin Resource Sharing handling with credentials support.
-- **SQLite 3**: Embedded relational database configured with **Write-Ahead Logging (`WAL` mode)** and `timeout=30.0` for high multi-process concurrency between server and simulator.
+### Primary Modern Stack (Node.js + Express + MongoDB)
+- **Node.js (v18+)**: High-performance asynchronous JavaScript runtime environment.
+- **Express.js (v4.19+)**: Robust web application framework and RESTful API router.
+- **MongoDB Server (v3.4+)**: Document database providing flexible, scalable schema storage for telemetry and system state.
+- **Mongoose ODM (v5.13+)**: Elegant object modeling for Node.js, managing schemas, validation, and lifecycle hooks.
+- **Nunjucks (v3.2+)**: Express server-side templating engine with Jinja2 compatibility hooks for seamless template rendering.
+- **express-session & connect-mongo (v3.2+)**: Scalable server-side session management backed directly by MongoDB.
+- **bcryptjs (v2.4+)**: Industry-standard cryptographic password hashing with unique salt generation.
+- **CORS & Custom CSRF Defense**: Dual cookie/body token verification for state-changing HTTP requests.
 
-### Frontend Stack
-- **HTML5 (Semantic)**: Accessible document structure with Jinja2 server-side rendering.
+### Frontend Presentation Layer
+- **HTML5 (Semantic)**: Accessible document structure with server-side template rendering.
 - **Vanilla CSS3**: Tailored dark-mode theme (`#0b1121`), glassmorphism, responsive CSS Grid/Flexbox layouts, and `@media print` print styling.
 - **Vanilla JavaScript (ES6+)**: Asynchronous fetch API, real-time 5-second polling, dynamic DOM updates, and client-side form validation.
 - **Chart.js (v4.4+)**: Interactive client-side canvas charts (time-series line charts, multi-department comparative bar charts).
+
+### Preserved Baseline Stack (Python + Flask + SQLite)
+- **Python 3.10+ / Flask (v3.1+) / Werkzeug (v3.1+) / SQLite 3 (WAL mode)**: Fully maintained in `backend/` and root entrypoints for side-by-side verification and baseline benchmarking.
 
 ---
 
 ## 🏗️ 3. System Architecture
 
-The system utilizes a multi-tier, decoupled architecture designed for concurrent data simulation and web serving:
+The system utilizes a decoupled multi-tier architecture designed for concurrent telemetry generation, MongoDB persistence, and real-time web serving:
 
 ```text
   +-------------------------------------------------------------------------+
-  |                     Three-Phase Telemetry Simulator                     |
-  |                              (simulator.py)                             |
+  |              Node.js Three-Phase Telemetry Simulator                    |
+  |                      (node_backend/simulator.js)                       |
   |  - Balanced 400V / 50Hz Generator                                       |
   |  - Diurnal Load Curves (08:00-17:00 Working Peak vs Night Baseline)     |
   |  - Apparent (kVA), Active (kW), Reactive (kVAr) & Incremental kWh       |
+  |  - Automated Alert Evaluation via alertEngine.js                        |
   |  - Controlled Anomaly Injection (--anomaly LOW_PF, LOW_VOLTAGE, etc.)   |
   +-------------------------------------------------------------------------+
                                        │
-                                       ▼ (Direct Transactional Writes)
+                                       ▼ (Direct Mongoose Inserts)
   +-------------------------------------------------------------------------+
-  |                      SQLite Database (energy.db)                        |
-  |                       Configured with WAL Mode                          |
-  |  - buildings (6 Core Campus Complexes + Dynamic Admin Facilities)       |
-  |  - users (Administrator / Viewer with hashed credentials)               |
-  |  - energy_readings (Timestamped 3-phase records, marked SIMULATED)      |
-  |  - alerts (Active / Cleared State-Machine Anomaly Log)                  |
-  |  - tariffs (Demonstration Two-Part Institutional Tariff Model)          |
-  |  - faculty_settings (Operating Hours & Schedule Parameters)             |
+  |                  MongoDB Database (ruhuna_energy)                       |
+  |                       Compatible with MongoDB 3.4+                      |
+  |  - buildings       : 6 Core Campus Complexes + Dynamic Admin Facilities |
+  |  - users           : Administrator / Viewer with bcrypt hashed passwords|
+  |  - energy_readings : Timestamped 3-phase records, marked SIMULATED      |
+  |  - alerts          : Active / Cleared State-Machine Anomaly Log         |
+  |  - tariffs         : Configurable Demonstration Institutional Tariff    |
+  |  - faculty_settings: Operating Hours & Faculty Schedule Parameters      |
+  |  - sessions        : MongoStore Server-Side Encrypted Sessions          |
   +-------------------------------------------------------------------------+
-                     ▲                                   ▲
-                     │ (Reads Telemetry)                 │ (Writes / Ack)
+                      ▲                                   ▲
+                      │ (Reads Telemetry)                 │ (Writes / Ack)
   +-------------------------------------------------------------------------+
-  |                         Flask Web Backend (app.py)                      |
-  |  - Cryptographic Session Management (FLASK_SECRET_KEY)                  |
-  |  - Role-Based Access Control (@login_required, @admin_required)         |
-  |  - Analytical Computation Engine (database.py)                          |
+  |                   Node.js Express Web Backend                           |
+  |             (node_backend/server.js, node_backend/app.js)               |
+  |  - MongoStore Session Management (SESSION_SECRET)                       |
+  |  - Role-Based Access Control (requireAuth, requireAdmin)                |
+  |  - CSRF Token Generation & Dual-Validation Middleware                   |
+  |  - Analytics Service & Report Computation (analyticsService.js)        |
   |  - REST APIs: /api/energy/live, /api/energy/analytics, /api/alerts,     |
   |               /api/energy/cost, /api/reports/summary, CSV export        |
   +-------------------------------------------------------------------------+
                                        │
-                                       ▼ (JSON / HTML Server-Side Render)
+                                       ▼ (JSON / Nunjucks Server-Side Render)
   +-------------------------------------------------------------------------+
   |                       Web Browser User Interface                        |
   |  - /dashboard        : Live Substation Monitor & 5s Chart.js Polling    |
   |  - /analytics        : Historical Electrical Hub & Load Factor Analysis |
   |  - /alerts           : Safety Violations Log & Admin Acknowledgment     |
-  |  - /cost-efficiency  : Two-Part Tariff Cost Model & Rankings            |
+  |  - /cost-efficiency  : Demonstration Tariff Cost Model & Rankings       |
   |  - /reports          : 16-Metric Audit Summaries & CSV Download         |
   |  - /reports/printable: Official University PDF Print Document           |
   +-------------------------------------------------------------------------+
 ```
 
-### Modular Repository Organization
-The codebase is structured into modular layers for separation of concerns while preserving root-level execution compatibility:
-- **`backend/`**: Core Flask routes, database schema/queries, telemetry simulator, and provisioning tools.
-- **`frontend/`**: HTML Jinja2 templates (`frontend/templates/`) and client assets (`frontend/static/css/`, `frontend/static/js/`).
-- **`tests/`**: Master test runner and automated test suites for Phases 1 through 15.
-- **`docs/`**: Academic project report, viva speaking notes, architecture, database schemas, and formulas.
-- **Project Root**: Thin backward-compatible entry points (`python app.py`, `python simulator.py`, `python run_all_tests.py`), `.gitignore`, and `requirements.txt`.
-
 ---
 
-## 📥 4. Installation & Database Setup Instructions
+## 📥 4. Installation & Windows PowerShell Startup Instructions
 
 ### Prerequisites
-- Python 3.10, 3.11, or 3.12 installed on your system.
-- Git installed on your system.
-
-### Step-by-Step Setup
-1. **Clone the repository** and navigate to the project root:
-   ```bash
-   git clone https://github.com/rusirukanchana50/Ruhuna-smart-energy-system.git
-   cd Ruhuna-smart-energy-system
-   ```
-
-2. **Create and activate a Python virtual environment** (recommended):
-   - **Windows (PowerShell)**:
-     ```powershell
-     python -m venv .venv
-     .\.venv\Scripts\Activate.ps1
-     ```
-   - **Linux / macOS**:
-     ```bash
-     python3 -m venv .venv
-     source .venv/bin/activate
-     ```
-
-3. **Install required Python dependencies**:
-   ```bash
-   pip install -r requirements.txt
-   ```
-
-4. **Verify that dependencies are satisfied**:
-   ```bash
-   python -c "import flask, flask_cors, werkzeug, sqlite3; print('All dependencies verified successfully!')"
-   ```
-
-5. **Initialize the SQLite Database**:
-   - The application uses an embedded SQLite database (`energy.db`) configured with Write-Ahead Logging (`WAL`).
-   - The database file and all core tables initialize automatically when `app.py`, `create_user.py`, or `simulator.py` is first executed.
-   - **Initial Buildings & Dynamic Growth**: Six original campus buildings (`CEE`, `EIE`, `MME`, `MENA`, `ADMIN`, `AUDI`) are created automatically when the database is initialized. Administrators can add additional buildings dynamically at any time using the **Manage Buildings** portal in the web interface or via `POST /api/buildings`, so the total number of monitored facilities is not fixed at six.
-   - You can also explicitly initialize the database schema at any time with:
-     ```bash
-     python -c "import database; database.init_db(); print('Database schema and core faculty buildings initialized.')"
-     ```
-
-6. **(Optional) Configure Environment Variables**:
-   - Copy the `.env.example` template if you wish to customize port, session secrets, or electrical thresholds:
-     ```bash
-     # Windows (PowerShell)
-     Copy-Item .env.example .env
-     # Linux / macOS
-     cp .env.example .env
-     ```
+- **Node.js (v18.0 or newer)**: Verify with `node -v` in PowerShell.
+- **MongoDB Server (v3.4 or newer)**: Ensure the MongoDB service is running locally on default port `27017` (`mongodb://127.0.0.1:27017`).
+- **PowerShell execution note**: On Windows PowerShell, execute `npm.cmd` rather than `npm` to avoid alias conflicts.
 
 ---
 
-## 👤 5. How to Create Demonstration Accounts Securely
+### Step 1: Install Node.js Dependencies
+In a Windows PowerShell window, navigate to the project directory and install the packages:
 
-User accounts should be created securely using the interactive `create_user.py` provisioning script. Passwords are typed interactively with hidden/masked input (never echoed to the terminal or recorded in shell histories) and stored with industry-standard cryptographic hashing (`Werkzeug` PBKDF2/scrypt).
-
-### Interactive Account Creation
-Run the interactive script in your terminal:
-```bash
-python create_user.py
+```powershell
+npm.cmd install
 ```
-Follow the interactive prompts to create your own account:
+
+---
+
+### Step 2: Initialize the MongoDB Database
+Initialize MongoDB with the core Faculty of Engineering buildings and baseline configuration:
+
+```powershell
+npm.cmd run init-db
+```
+
+- Connects to `mongodb://127.0.0.1:27017/ruhuna_energy`.
+- Seeds the 6 original Faculty of Engineering core campus complexes:
+  1. `CEE` — Civil and Environmental Engineering ($60\text{ kW}$)
+  2. `EIE` — Electrical and Information Engineering ($70\text{ kW}$)
+  3. `MME` — Mechanical and Manufacturing Engineering ($85\text{ kW}$)
+  4. `MENA` — Marine Engineering and Naval Architecture ($55\text{ kW}$)
+  5. `ADMIN` — Administration Complex ($40\text{ kW}$)
+  6. `AUDI` — Main Auditorium ($50\text{ kW}$)
+- **Idempotent**: Safe to run multiple times without creating duplicate records or overwriting existing data.
+
+---
+
+### Step 3: Create User Accounts Interactively
+User accounts must be provisioned interactively using the secure command-line tool. Passwords are typed interactively with masked input (never displayed on screen or stored in shell command history):
+
+```powershell
+npm.cmd run create-user
+```
+
+Follow the interactive prompts:
 1. **Full Name**: Enter display name (e.g., `Faculty Administrator` or `Student Viewer`).
-2. **University Email**: Enter institutional login email (e.g., `admin@eng.ruh.ac.lk`).
-3. **Role Selection**: Select `1` for **Administrator** (full management, dynamic building creation, alert acknowledgment) or `2` for **Viewer** (read-only telemetry and reporting).
-4. **Password**: Type your chosen secure password interactively. Input is masked using Python's standard `getpass` module to protect against shoulder-surfing.
+2. **University Email**: Enter login email (e.g., `admin@eng.ruh.ac.lk` or `viewer@eng.ruh.ac.lk`).
+3. **Role Selection**: Enter `1` for **Administrator** (full management, building registration, alert acknowledgment) or `2` for **Viewer** (read-only telemetry and reporting).
+4. **Password (hidden)**: Enter your chosen password (minimum 6 characters). Input is masked for shoulder-surfing protection.
+5. **Confirm Password (hidden)**: Re-enter the password to confirm.
 
-> **Security Notices**:
-> - **No Hardcoded Credentials**: No default passwords or demonstration credentials are pre-installed in the repository. Users must create their own accounts via `python create_user.py`.
-> - **Excluded Database**: The SQLite database file (`energy.db`) is ignored by Git to prevent leaking telemetry and credential hashes.
-> - **Initial Setup**: On a fresh clone, run `python create_user.py` to create your initial Administrator or Viewer account before logging into the portal.
+> **Security Note**:
+> No demonstration passwords or default credentials are hardcoded into the repository. You must run `npm.cmd run create-user` to set up your administrator and viewer credentials before logging in.
 
 ---
 
-## 🚀 6. How to Run `app.py` (Flask Web Application)
-
-In your first terminal, launch the web application server:
+### Step 4: Launch the Express Web Server
+In **Terminal 1**, start the Express HTTP server:
 
 ```powershell
-python app.py
+npm.cmd start
 ```
 
-- Flask starts on `http://127.0.0.1:5000`.
-- The database connection automatically initializes `energy.db` with WAL mode.
-- Access the web application in any modern browser at `http://127.0.0.1:5000`.
+- Express connects to MongoDB and begins listening on `http://localhost:5000`.
+- Health check available at `http://localhost:5000/api/health`.
+- Access the web interface in any modern browser at:
+  ```text
+  http://127.0.0.1:5000
+  ```
 
 ---
 
-## ⚡ 7. How to Run `simulator.py` (Telemetry Simulator)
-
-In a **separate second terminal**, run the three-phase electrical simulator:
+### Step 5: Launch the Telemetry Simulator
+In a **separate Windows PowerShell terminal (Terminal 2)**, run the electrical simulator:
 
 ```powershell
-# Run with standard 15-second sampling interval:
-python simulator.py
+# Standard continuous simulation (default 15-second sampling interval):
+npm.cmd run simulator
 
-# Run with fast 5-second interval (recommended for live viva demonstrations):
-python simulator.py --interval 5.0
+# Fast 5-second interval (recommended for live viva demonstrations):
+node node_backend/simulator.js --interval 5.0
 
-# Run a single cycle and exit (useful for quick database population):
-python simulator.py --once
+# Single cycle execution (useful for quick database population):
+node node_backend/simulator.js --once
 
-# Run with live anomaly injection (for testing alerts):
-python simulator.py --interval 5.0 --anomaly LOW_PF --building-id 1
+# Live electrical anomaly injection (for demonstrating alert triggers):
+node node_backend/simulator.js --interval 5.0 --anomaly LOW_PF --building-id CEE
 ```
 
 Supported anomaly injection types:
-- `LOW_PF`: Drops Power Factor below $0.85$ to trigger a Low PF warning.
+- `LOW_PF`: Drops Power Factor below $0.85$ to trigger a Low Power Factor warning.
 - `LOW_VOLTAGE`: Drops Line Voltage below $380\text{ V}$ to trigger an Undervoltage critical alert.
 - `HIGH_VOLTAGE`: Spikes Line Voltage above $420\text{ V}$ to trigger an Overvoltage critical alert.
-- `HIGH_LOAD`: Drives Active Power $> 90\%$ of feeder rated capacity to trigger High Demand warning.
-- `OVERLOAD`: Drives Active Power $> 100\%$ of feeder rated capacity to trigger Overload critical alert.
+- `HIGH_LOAD`: Drives Active Power $> 90\%$ of building rated capacity for a High Load warning.
+- `OVERLOAD`: Drives Active Power $> 100\%$ of building rated capacity for an Overload critical alert.
 - `HIGH_FREQ` / `LOW_FREQ`: Grid frequency deviations ($> 50.5\text{ Hz}$ or $< 49.5\text{ Hz}$).
 
 ---
 
-## 🌐 8. How to Access the Application
+## 🐍 5. Preserved Python Alternative Instructions
 
-1. Open your web browser (Chrome, Edge, Firefox, or Safari).
-2. Visit:
-   ```text
-   http://127.0.0.1:5000
-   ```
-3. You will be greeted by the branded **Sign In** screen.
-4. Enter your provisioned credentials created via `python create_user.py` (e.g., your administrator or viewer email and chosen secure password).
-5. After authentication, you will be redirected to the **Live Monitor Dashboard**.
+The original Python/Flask/SQLite implementation remains fully operational and can be executed at any time:
 
----
-
-## 📋 9. Step-by-Step Demonstration Procedure (Viva Walkthrough)
-
-Follow this verified sequence during viva evaluations:
-
-| Step | Page / Action | Demonstration Focus |
-|---|---|---|
-| **1** | `/login` | Show dark-themed faculty crest, form validation, show/hide password toggle, and RBAC authentication. |
-| **2** | `/dashboard` | View active building substation cards (six original campus complexes created automatically at database initialization, plus any additional facilities added dynamically by administrators; total is not fixed at six). Observe 5-second real-time polling and sliding-window Chart.js graphs. For Administrators, demonstrate the **Manage Buildings** modal to add new facilities dynamically. Point out the `SIMULATED DATA` disclaimer badge. |
-| **3** | `/analytics` | Filter historical telemetry by department (e.g. `CEE`), test presets (`1h`, `today`, `24h`, `7d`), and explain **Load Factor** ($\text{LF} = P_{\text{avg}} / P_{\text{peak}}$). Show the campus-wide comparative graphs. |
-| **4** | `/alerts` | Observe active electrical threshold violations. Switch to Terminal 2, inject an anomaly (`--anomaly LOW_PF`), and watch the alert banner appear live. Demonstrate **Administrator Acknowledgment**. |
-| **5** | `/cost-efficiency` | Explain the two-part demonstration institutional tariff (Energy + Peak Demand + Fixed), after-hours consumption detection (08:00–17:00 weekdays), and departmental efficiency rankings. |
-| **6** | `/reports` | Generate a 16-parameter summary audit report, download the timestamped raw telemetry CSV export, and open the `/reports/printable` official PDF print view. |
-| **7** | `/logout` | Log out and verify that unauthorized requests back to `/dashboard` or `/api/energy/live` are blocked with HTTP 302 / 401. |
-
-For detailed speaking notes and examiner Q&A answers, refer to [DEMO_MODE.md](docs/DEMO_MODE.md) and [VIVA_NOTES.md](docs/VIVA_NOTES.md).
-
----
-
-## ⚙️ 10. System Configuration & Tuning
-
-Configuration parameters can be adjusted easily without modifying source code:
-
-### Environment Variables (`.env.example`):
-- `FLASK_SECRET_KEY`: Cryptographic session key (e.g., `export FLASK_SECRET_KEY="my-key"`).
-- `SIMULATOR_INTERVAL`: Default telemetry sampling interval in seconds (default: `15.0`).
-- `THRESHOLD_PF_LOW`: Power factor warning limit (default: `0.85`).
-- `THRESHOLD_VOLTAGE_MIN`: Minimum line voltage in Volts (default: `380.0`).
-- `THRESHOLD_VOLTAGE_MAX`: Maximum line voltage in Volts (default: `420.0`).
-- `THRESHOLD_FREQ_MIN`: Minimum frequency in Hz (default: `49.5`).
-- `THRESHOLD_FREQ_MAX`: Maximum frequency in Hz (default: `50.5`).
-- `THRESHOLD_HIGH_LOAD_RATIO`: High load warning ratio (default: `0.90` = 90% of rated capacity).
-- `THRESHOLD_SENSOR_OFFLINE`: Sensor silence alert threshold in seconds (default: `60.0`).
-
-### Command-Line Tuning Tool (`configure_system.py`):
 ```powershell
-# View all active system parameters:
-python configure_system.py --show
+# 1. Activate Python virtual environment:
+.\.venv\Scripts\Activate.ps1
 
-# Change building rated capacity:
-python configure_system.py --building CEE --rated-power 65.0
+# 2. Initialize or create user accounts:
+python create_user.py
 
-# Adjust faculty standard operating hours:
-python configure_system.py --hours-start 08:30 --hours-end 16:30
+# 3. Launch Flask server:
+python app.py
 
-# Adjust demonstration tariff rates:
-python configure_system.py --energy-rate 42.0 --demand-rate 1500.0 --fixed-charge 3500.0
+# 4. In a separate terminal, launch Python simulator:
+python simulator.py --interval 5.0
 ```
 
 ---
 
-## 🧪 11. Automated Test Suite
+## 🌐 6. How to Access and Navigate the Application
 
-Run the master automated test runner to verify complete system integrity:
+1. Open your browser and navigate to:
+   ```text
+   http://127.0.0.1:5000
+   ```
+2. Unauthenticated requests automatically redirect to `/login`.
+3. Sign in using the credentials created via `npm.cmd run create-user`.
+4. Portal navigation tabs:
+   - **`/dashboard`**: Real-time live substation cards with 5-second Chart.js polling, status badges, and dynamic building registration for Administrators.
+   - **`/analytics`**: Historical time-series analytics, departmental filtering, date presets (`1h`, `today`, `24h`, `7d`), and Load Factor ($\text{LF} = P_{\text{avg}} / P_{\text{peak}}$).
+   - **`/alerts`**: Active and historical electrical threshold safety logs with one-click Administrator acknowledgment and duplicate suppression.
+   - **`/cost-efficiency`**: Departmental cost estimation and energy efficiency rankings based on the demonstration institutional tariff.
+   - **`/reports`**: 16-parameter energy audit summary, raw telemetry CSV export streaming, and official printable PDF audit report (`/reports/printable`).
+
+---
+
+## 🔬 7. Academic Integrity & Disclaimers
+
+### Simulated Measurements Disclaimer
+> **IMPORTANT**:
+> All electrical measurements (Line Voltage, Line Current, Active Power, Reactive Power, Apparent Power, Frequency, and Power Factor) are **simulated in software** using mathematical three-phase AC power models. No physical sensors or smart meters are currently connected to the physical electrical distribution switchboards at the University of Ruhuna. To preserve academic integrity, all telemetry records and UI cards are explicitly marked as `[SIMULATED]`.
+
+### Demonstration Tariff Disclaimer
+> **IMPORTANT**:
+> The electricity cost calculations presented on `/cost-efficiency` and within audit reports utilize an **educational demonstration two-part institutional tariff model** (comprising an energy consumption charge, peak demand charge, and fixed monthly charge). This model serves solely for software modeling and algorithmic validation; it **does not represent official electricity billing from the Ceylon Electricity Board (CEB)**.
+
+---
+
+## ⚠️ 8. Technical Limitations & MongoDB Server 3.4 Notes
+
+1. **MongoDB Server 3.4 Multi-Document Atomicity**:
+   - The application supports MongoDB Server 3.4+.
+   - Multi-document transactions (`session.withTransaction()`) were introduced in MongoDB 4.0 (for replica sets) and 4.2 (for sharded clusters).
+   - In MongoDB Server 3.4 or standalone deployments, **multi-document deletions across collections are not transactionally atomic**.
+   - When an Administrator deletes a facility and purges simulated records (`POST /api/buildings/:id/delete-simulated`), deletions are executed sequentially across `energy_readings`, `alerts`, and `buildings`. While individual document writes are atomic, a system crash or power interruption during the multi-collection cascade will not automatically roll back earlier deletions.
+2. **Balanced Load Assumption**:
+   - The simulator assumes balanced three-phase operation ($V_{RN} = V_{YN} = V_{BN}$, $I_R = I_Y = I_B$). Per-phase harmonic distortion (THD) and neutral conductor currents are not currently modeled.
+3. **No Autonomous Actuation**:
+   - The system performs supervisory monitoring, automated alerting, and audit logging; it does not trigger physical circuit breakers or shed physical loads.
+
+---
+
+## 🧪 9. Automated Testing & Verification
+
+### Node.js Automated Test Suite (184/184 Passed)
+Run the Node.js test runner using `npm.cmd`:
+
+```powershell
+npm.cmd test
+```
+
+### Node.js Test Execution Breakdown:
+| Test Suite | Script | Tests | Description |
+|:---|:---|:---:|:---|
+| **Phase 2** | `node_backend/tests/phase2.test.js` | **16/16** | Mongoose Models, Schema Constraints & Bcrypt Hashing |
+| **Phase 3A** | `node_backend/tests/phase3a.test.js` | **16/16** | Auth Routes, Session Persistence & RBAC Protection |
+| **Phase 3B** | `node_backend/tests/phase3b.test.js` | **31/31** | CSRF Protection, Secret Key Handling & Session Store |
+| **Phase 4** | `node_backend/tests/phase4.test.js` | **23/23** | Telemetry Simulation, 3-Phase Math & Reading Insertion |
+| **Phase 5** | `node_backend/tests/phase5.test.js` | **22/22** | Alert Detection Engine, Anomaly Types & Acknowledgment |
+| **Phase 6A** | `node_backend/tests/phase6a.test.js` | **26/26** | Historical Analytics, Load Factor & Aggregation Pipeline |
+| **Phase 6B** | `node_backend/tests/phase6b.test.js` | **25/25** | Live Dashboard, Dynamic Building Management & Safeguards |
+| **Phase 6C** | `node_backend/tests/phase6c.test.js` | **25/25** | Cost Analytics, Demonstration Tariffs & Audit Reports |
+| **TOTAL** | **8 Test Suites** | **184/184** | **100% Passed** |
+
+---
+
+### Preserved Python Test Suite (159/159 Passed)
+The baseline Python test suite can be run at any time:
 
 ```powershell
 python run_all_tests.py
 ```
+- Total Test Suites: 16
+- Total Checks Passed: 159/159 (100% Passed)
 
-### Test Suite Scorecard:
-```text
-=====================================================================================
- MASTER TEST EXECUTION SUMMARY TABLE
-=====================================================================================
- #   | Test Script              | Status   | Checks   | Time     | Description
--------------------------------------------------------------------------------------
- 1   | test_app.py              | [PASS]   | 5/5      | 0.45s    | Phase 1: Database & Buildings REST API
- 2   | test_phase2.py           | [PASS]   | 8/8      | 0.57s    | Phase 2: Authentication, RBAC & Session Protection
- 3   | test_phase3.py           | [PASS]   | 4/4      | 0.85s    | Phase 3: Three-Phase Simulator & Electrical Math
- 4   | test_phase4.py           | [PASS]   | 3/3      | 1.03s    | Phase 4: Live Telemetry Dashboard & Polling
- 5   | test_phase5.py           | [PASS]   | 5/5      | 1.07s    | Phase 5: Historical Analytics & Load Factor
- 6   | test_phase5_thorough.py  | [PASS]   | 70/70    | 2.06s    | Phase 5 Thorough: Mathematical Ground-Truth & Edge Cases
- 7   | test_phase6.py           | [PASS]   | 7/7      | 1.43s    | Phase 6: Electrical Alerts & Anomaly Detection
- 8   | test_phase7.py           | [PASS]   | 7/7      | 1.61s    | Phase 7: Cost Calculation & Efficiency Analysis
- 9   | test_phase8.py           | [PASS]   | 4/4      | 1.61s    | Phase 8: Comprehensive Reports, CSV Export & RBAC
- 10  | test_workflow_e2e.py     | [PASS]   | 10/10    | 2.38s    | Phase 10: End-to-End Workflow (Login->Reports->Logout)
- 11  | verify_phase9.py         | [PASS]   | 6/6      | 0.43s    | Phase 9: Comprehensive System Integration Verification
- 12  | test_building_deletion.py | [PASS]   | 4/4      | 0.81s    | Phase 11: Foreign Key Safety & Safe Building Deletion
- 13  | test_validation.py       | [PASS]   | 4/4      | 0.73s    | Phase 12: Input Validation, Error Handling & Uniqueness
- 14  | test_csrf_security.py    | [PASS]   | 5/5      | 0.60s    | Phase 13: CSRF Defense & Secret Key Security
- 15  | test_building_simulated_deletion.py | [PASS]   | 8/8      | 1.15s    | Phase 14: Safe Admin Building & Simulated Data Deletion
- 16  | test_building_lifecycle_simulation.py | [PASS]   | 9/9      | 1.35s    | Phase 15: Building Re-creation & Dynamic Simulator Telemetry
-=====================================================================================
- Total Test Suites   : 16 (16 Passed, 0 Failed)
- Total Checks/Tests  : 159 Passed, 0 Failed (100% Success Rate)
-=====================================================================================
+---
+
+## ⚙️ 10. Environment Variables (`.env.example`)
+
+To customize runtime settings, copy `.env.example` to `.env`:
+
+```powershell
+Copy-Item .env.example .env
 ```
 
+| Variable | Default Value | Description |
+|:---|:---|:---|
+| `PORT` | `5000` | Port for Express HTTP server |
+| `MONGODB_URI` | `mongodb://127.0.0.1:27017/ruhuna_energy` | MongoDB connection URI |
+| `SESSION_SECRET` | *(Random 256-bit)* | Private key for cryptographic session signing |
+| `SIMULATOR_INTERVAL` | `15.0` | Default telemetry sampling interval in seconds |
+| `THRESHOLD_PF_LOW` | `0.85` | Power factor warning limit |
+| `THRESHOLD_VOLTAGE_MIN`| `380.0` | Undervoltage threshold in Volts |
+| `THRESHOLD_VOLTAGE_MAX`| `420.0` | Overvoltage threshold in Volts |
+| `THRESHOLD_FREQ_MIN` | `49.5` | Minimum grid frequency in Hz |
+| `THRESHOLD_FREQ_MAX` | `50.5` | Maximum grid frequency in Hz |
+| `THRESHOLD_HIGH_LOAD_RATIO` | `0.90` | High load threshold (90% of rated capacity) |
+| `THRESHOLD_SENSOR_OFFLINE` | `60.0` | Sensor silence alert threshold in seconds |
+
 ---
 
-## ⚠️ 12. Current Limitations
+## 📚 11. Documentation Index
 
-1. **Simulated Measurements**: All telemetry values are generated in software using mathematical models; no physical smart meters are currently installed on university distribution switchboards.
-2. **Balanced Load Model**: Telemetry currently assumes balanced three-phase operation ($V_{RN} = V_{YN} = V_{BN}$); per-phase unbalance and neutral currents are not monitored.
-3. **Prototype SQLite Database**: Uses an embedded SQLite file (`energy.db`); future physical deployment requires a high-throughput time-series database (TimescaleDB / PostgreSQL).
-4. **Demonstration Tariff**: The two-part cost calculation is an engineering demonstration model and does not represent the official bulk electricity billing from the Ceylon Electricity Board (CEB).
-5. **No Autonomous Load Control**: The system performs supervisory monitoring and anomaly alerting but does not autonomously trip circuit breakers or shed electrical loads.
+Detailed architectural documentation and theoretical proofs are maintained in [`docs/`](docs/):
 
-For details on the engineering roadmap (Modbus/RS485 gateways, solar PV integration, harmonics/THD, and predictive forecasting), refer to [LIMITATIONS_AND_FUTURE_WORK.md](docs/LIMITATIONS_AND_FUTURE_WORK.md) and [EE4207_FINAL_PROJECT_REPORT.md](docs/EE4207_FINAL_PROJECT_REPORT.md).
-
----
-
-## 📚 13. Documentation Index & Technical References
-
-All project documentation, viva preparation materials, database schemas, and mathematical derivations are maintained in the [`docs/`](docs/) directory:
-
-| Document | Description | Reference Link |
-| :--- | :--- | :--- |
-| **Project Structure** | Comprehensive breakdown of `backend/`, `frontend/`, `tests/`, and `docs/` | [`docs/PROJECT_STRUCTURE.md`](docs/PROJECT_STRUCTURE.md) |
+| Document | Content Description | Reference |
+|:---|:---|:---|
 | **System Architecture** | Multi-tier architecture, dataflow diagrams, and concurrency design | [`docs/SYSTEM_ARCHITECTURE.md`](docs/SYSTEM_ARCHITECTURE.md) |
-| **Database Schema** | Detailed schema, table definitions, foreign keys, and WAL configuration | [`docs/DATABASE_SCHEMA.md`](docs/DATABASE_SCHEMA.md) |
-| **Electrical Formulas** | AC power triangle, line/phase equations, and trapezoidal integration math | [`docs/FORMULAS.md`](docs/FORMULAS.md) |
-| **Viva Examination Notes** | Technical defense talking points, examiner Q&A, and theoretical proofs | [`docs/VIVA_NOTES.md`](docs/VIVA_NOTES.md) |
+| **Database Schema** | Detailed schema, document models, indexes, and relations | [`docs/DATABASE_SCHEMA.md`](docs/DATABASE_SCHEMA.md) |
+| **Electrical Formulas** | AC power triangle, line/phase equations, and numerical integration | [`docs/FORMULAS.md`](docs/FORMULAS.md) |
+| **Viva Examination Notes** | Technical defense talking points, examiner Q&A, and proofs | [`docs/VIVA_NOTES.md`](docs/VIVA_NOTES.md) |
 | **Demonstration Mode** | Step-by-step viva presentation guide and anomaly injection procedures | [`docs/DEMO_MODE.md`](docs/DEMO_MODE.md) |
-| **Demonstration Checklist** | Pre-demonstration system readiness check, commands, and verify steps | [`docs/DEMO_CHECKLIST.md`](docs/DEMO_CHECKLIST.md) |
-| **Limitations & Future Work** | Hardware gateway roadmap (Modbus/RS485), solar PV, and forecasting | [`docs/LIMITATIONS_AND_FUTURE_WORK.md`](docs/LIMITATIONS_AND_FUTURE_WORK.md) |
+| **Demonstration Checklist**| Pre-demonstration system readiness check and verification commands | [`docs/DEMO_CHECKLIST.md`](docs/DEMO_CHECKLIST.md) |
+| **Limitations & Roadmap** | Hardware gateway roadmap (Modbus/RS485), solar PV, and forecasting | [`docs/LIMITATIONS_AND_FUTURE_WORK.md`](docs/LIMITATIONS_AND_FUTURE_WORK.md) |
 | **Final Project Report** | Complete academic project report and faculty submission document | [`docs/EE4207_FINAL_PROJECT_REPORT.md`](docs/EE4207_FINAL_PROJECT_REPORT.md) |
 
 ---
 
 ## 🏛️ Acknowledgments & Faculty
 - **Institution**: Faculty of Engineering, University of Ruhuna, Hapugala, Galle, Sri Lanka.
-- **Core Initialized Complexes**:
+- **Academic Complexes Monitored**:
   - Civil and Environmental Engineering (`CEE`)
   - Electrical and Information Engineering (`EIE`)
   - Mechanical and Manufacturing Engineering (`MME`)
   - Marine Engineering and Naval Architecture (`MENA`)
-  - Administration Complex (`ADMIN`)
-  - Main Auditorium (`AUDI`)
-  *(Additional campus buildings and substations can be registered dynamically by Administrators via the UI)*
+  - Administration Building (`ADMIN`)
+  - Auditorium (`AUDI`)
+  *(Additional facilities can be dynamically registered by Administrators)*

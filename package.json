@@ -1,0 +1,40 @@
+{
+  "name": "ruhuna-smart-energy-system",
+  "version": "1.0.0",
+  "description": "Faculty of Engineering, University of Ruhuna - Smart Energy Monitoring and Analytics System (Node.js/Express/MongoDB)",
+  "main": "node_backend/server.js",
+  "scripts": {
+    "start": "node node_backend/server.js",
+    "init-db": "node node_backend/init_db.js",
+    "create-user": "node node_backend/create_user.js",
+    "simulator": "node node_backend/simulator.js",
+    "test": "node --test node_backend/tests/phase2.test.js && node --test node_backend/tests/phase3a.test.js && node --test node_backend/tests/phase3b.test.js && node --test node_backend/tests/phase4.test.js && node --test node_backend/tests/phase5.test.js && node --test node_backend/tests/phase6a.test.js && node --test node_backend/tests/phase6b.test.js && node --test node_backend/tests/phase6c.test.js",
+    "test:phase2": "node --test node_backend/tests/phase2.test.js",
+    "test:phase3a": "node --test node_backend/tests/phase3a.test.js",
+    "test:phase3b": "node --test node_backend/tests/phase3b.test.js",
+    "test:phase4": "node --test node_backend/tests/phase4.test.js",
+    "test:phase5": "node --test node_backend/tests/phase5.test.js",
+    "test:phase6a": "node --test node_backend/tests/phase6a.test.js",
+    "test:phase6b": "node --test node_backend/tests/phase6b.test.js",
+    "test:phase6c": "node --test node_backend/tests/phase6c.test.js"
+  },
+  "keywords": [
+    "energy-monitoring",
+    "iot",
+    "express",
+    "mongoose",
+    "mongodb"
+  ],
+  "author": "Faculty of Engineering, University of Ruhuna",
+  "license": "MIT",
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "connect-mongo": "^3.2.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.19.2",
+    "express-session": "^1.18.0",
+    "mongoose": "^5.13.22",
+    "nunjucks": "^3.2.4"
+  }
+}

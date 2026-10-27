@@ -63,7 +63,7 @@ python simulator.py --interval 5.0
    - Try directly accessing `http://127.0.0.1:5000/dashboard` in an Incognito window to show that unauthorized access is blocked (HTTP 302 redirect).
 3. **Log in as Administrator**:
    - **Email**: `admin@ruh.ac.lk` (or `test_admin@eng.ruh.ac.lk`)
-   - **Password**: `AdminSecretPassword123!`
+   - **Password**: `<your-admin-password>` *(entered interactively during account creation)*
    - **Click**: "Sign In"
    - **Highlight**: Dark-themed university branding, session persistence, and the `ADMINISTRATOR` status badge in the top navigation bar.
 
